@@ -25,6 +25,7 @@ export default function SignupPage() {
       email: '',
       password: '',
       full_name: '',
+      role: undefined,
     },
   });
 
@@ -33,6 +34,7 @@ export default function SignupPage() {
     formData.append('email', data.email);
     formData.append('password', data.password);
     formData.append('full_name', data.full_name);
+    formData.append('role', data.role);
 
     startTransition(async () => {
       const { error } = await signup(formData);
@@ -77,6 +79,43 @@ export default function SignupPage() {
                 <p className="text-red-400 text-sm">{form.formState.errors.password.message}</p>
               )}
             </div>
+            
+            <div className="space-y-2">
+              <Label>I am a</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className={`relative flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${form.watch('role') === 'owner' ? 'border-purple-400 bg-purple-500/20' : 'border-white/20 bg-white/10'}`}>
+                  <input
+                    type="radio"
+                    value="owner"
+                    {...form.register('role')}
+                    className="sr-only"
+                  />
+                  <svg className="w-12 h-12 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                  </svg>
+                  <span className="text-sm font-medium">Restaurant Owner</span>
+                  <span className="text-xs text-gray-300 mt-1">Manage menus & orders</span>
+                </label>
+                
+                <label className={`relative flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${form.watch('role') === 'client' ? 'border-purple-400 bg-purple-500/20' : 'border-white/20 bg-white/10'}`}>
+                  <input
+                    type="radio"
+                    value="client"
+                    {...form.register('role')}
+                    className="sr-only"
+                  />
+                  <svg className="w-12 h-12 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium">Client</span>
+                  <span className="text-xs text-gray-300 mt-1">Browse & order food</span>
+                </label>
+              </div>
+              {form.formState.errors.role && (
+                <p className="text-red-400 text-sm">{form.formState.errors.role.message}</p>
+              )}
+            </div>
+
             <Button type="submit" className="w-full bg-purple-700 hover:bg-purple-800" disabled={isPending}>
               {isPending ? 'Signing up...' : 'Sign Up'}
             </Button>

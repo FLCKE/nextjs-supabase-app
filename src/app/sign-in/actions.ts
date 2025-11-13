@@ -17,7 +17,7 @@ export async function signin(formData: FormData) {
 
   const { email, password } = signinSchema.parse(Object.fromEntries(formData.entries()))
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -29,5 +29,20 @@ export async function signin(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/dashboard/profile')
+  // Get user profile to check role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single()
+
+  // Redirect based on role
+  if (profile?.role === 'owner') {
+    // Restaurant owners go to dashboard
+    redirect('/dashboard/restaurants')
+  } else {
+    // Clients go to browse restaurants
+    // (Note: They can also browse without signing in)
+    redirect('/restaurants')
+  }
 }
