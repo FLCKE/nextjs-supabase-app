@@ -9,6 +9,18 @@ export type Profile = {
   updated_at: string;
 };
 
+export type StaffMember = {
+  id: string;
+  restaurant_id: string;
+  user_id: string;
+  name: string;
+  username: string;
+  login_code_hash: string;
+  created_at: string;
+  updated_at: string;
+  role: string;
+};
+
 export type Restaurant = {
   id: string;
   owner_id: string;
@@ -80,4 +92,46 @@ export type InventoryAdjustment = {
 export type MenuItemWithStock = MenuItem & {
   current_stock: number | null;
   restaurant_id: string;
+};
+
+export type OrderStatus = 'PENDING' | 'PAYING' | 'PAID' | 'SERVED' | 'CANCELLED' | 'REFUNDED';
+
+export type Order = {
+  id: string;
+  restaurant_id: string; // Added
+  location_id: string;   // Added
+  table_id: string;
+  status: OrderStatus;
+  currency: string;
+  total_net_cts: number;
+  taxes_cts: number;
+  total_gross_cts: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  item_id: string;
+  name: string;
+  qty: number;
+  unit_price_cts: number;
+  total_price_cts: number;
+  created_at: string;
+};
+
+export type OrderWithDetails = Order & {
+  table_label: string;
+  location_name: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  item_count: number;
+};
+
+export type OrderWithItems = Order & {
+  items: OrderItem[];
+  table_label?: string;
+  location_name?: string;
 };

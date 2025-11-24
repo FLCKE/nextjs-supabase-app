@@ -22,7 +22,6 @@ export default async function ProfilePage() {
     .single()
 
   let profile: Profile
-
   if (!profileData) {
     profile = {
       id: user.id,
@@ -34,6 +33,7 @@ export default async function ProfilePage() {
       updated_at: new Date().toISOString(),
     }
   } else {
+    
     profile = profileData as Profile
   }
 

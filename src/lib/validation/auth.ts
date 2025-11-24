@@ -9,3 +9,8 @@ export const signupSchema = z.object({
     message: 'Please select whether you are a restaurant owner or client',
   }),
 });
+
+export const staffLoginSchema = z.object({
+  username: z.string().min(1, 'Username is required.'),
+  login_code: z.string().length(5, 'Login code must be 5 digits.'),
+});

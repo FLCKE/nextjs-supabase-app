@@ -38,7 +38,7 @@ import type { MenuItem } from '@/types';
 const adjustmentSchema = z.object({
   item_id: z.string().uuid('Invalid item'),
   type: z.enum(['IN', 'OUT', 'SPOILAGE']),
-  quantity: z.coerce.number().int().positive('Quantity must be positive'),
+  quantity: z.number().int().positive('Quantity must be positive'),
   reason: z.string().optional(),
 });
 

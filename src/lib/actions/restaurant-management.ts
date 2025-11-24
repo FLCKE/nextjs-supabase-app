@@ -8,12 +8,36 @@ import { revalidatePath } from 'next/cache';
 // Restaurant CRUD
 export async function getRestaurants(): Promise<Restaurant[]> {
   const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return [];
+  }
+
+  // First, check if the user has the 'owner' role in their profile
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  // If the user is not an owner, they should not see any restaurants in this view.
+  if (profileError || !profile || profile.role !== 'owner') {
+    if (profileError) console.error('Error fetching profile for getRestaurants:', profileError);
+    return [];
+  }
+
+  // If they are an owner, fetch their restaurants
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
+    .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching restaurants for owner:', error);
+    throw error;
+  }
   return data || [];
 }
 

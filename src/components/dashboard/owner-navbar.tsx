@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   User,
+  ShoppingCart,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -21,6 +22,11 @@ const navItems = [
     label: 'Restaurants',
     href: '/dashboard/restaurants',
     icon: Store,
+  },
+  {
+    label: 'Orders',
+    href: '/dashboard/orders',
+    icon: ShoppingCart,
   },
   {
     label: 'Locations',

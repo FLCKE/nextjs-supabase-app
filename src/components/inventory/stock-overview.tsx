@@ -10,40 +10,40 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { MenuItem } from '@/types';
+import type { MenuItemWithStock } from '@/types';
 import { Plus, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface StockOverviewProps {
-  items: MenuItem[];
-  stockData: Record<string, number>;
-  onAddAdjustment: (itemId: string) => void;
+  menuItems: MenuItemWithStock[];
 }
 
-export function StockOverview({ items, stockData, onAddAdjustment }: StockOverviewProps) {
-  const getStockStatus = (item: MenuItem, currentStock: number) => {
+export function StockOverview({ menuItems }: StockOverviewProps) {
+  const getStockStatus = (item: MenuItemWithStock, currentStock: number | null) => {
     if (item.stock_mode !== 'FINITE') {
       return null;
     }
-    if (currentStock === 0) {
+    const stock = currentStock ?? 0;
+    if (stock === 0) {
       return <Badge variant="destructive">Out of Stock</Badge>;
     }
-    if (currentStock <= 5) {
+    if (stock <= 5) {
       return <Badge variant="default" className="bg-orange-600">Low Stock</Badge>;
     }
     return <Badge variant="default" className="bg-green-600">In Stock</Badge>;
   };
 
-  const getStockIcon = (item: MenuItem, currentStock: number) => {
+  const getStockIcon = (item: MenuItemWithStock, currentStock: number | null) => {
     if (item.stock_mode !== 'FINITE') {
       return null;
     }
-    if (currentStock === 0 || currentStock <= 5) {
+    const stock = currentStock ?? 0;
+    if (stock === 0 || stock <= 5) {
       return <AlertCircle className="h-4 w-4 text-orange-600" />;
     }
     return <CheckCircle className="h-4 w-4 text-green-600" />;
   };
 
-  const finiteItems = items.filter((item) => item.stock_mode === 'FINITE');
+  const finiteItems = menuItems.filter((item) => item.stock_mode === 'FINITE');
 
   if (finiteItems.length === 0) {
     return (
@@ -72,7 +72,7 @@ export function StockOverview({ items, stockData, onAddAdjustment }: StockOvervi
         </TableHeader>
         <TableBody>
           {finiteItems.map((item) => {
-            const currentStock = stockData[item.id] || 0;
+            const currentStock = item.current_stock || 0;
             return (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">
@@ -89,14 +89,7 @@ export function StockOverview({ items, stockData, onAddAdjustment }: StockOvervi
                 </TableCell>
                 <TableCell>{getStockStatus(item, currentStock)}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onAddAdjustment(item.id)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adjust
-                  </Button>
+                  {/* Adjustment button would go here */}
                 </TableCell>
               </TableRow>
             );

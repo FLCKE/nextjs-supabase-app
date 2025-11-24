@@ -19,12 +19,12 @@ import { getMenusByRestaurant, getMenuItemsByMenu } from '@/lib/actions/menu-act
 import { getUserRestaurants } from '@/lib/actions/restaurant-management';
 import { Package, Plus, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Restaurant, Menu, MenuItem } from '@/types';
+import type { Restaurant, Menu, MenuItem, MenuItemWithStock } from '@/types';
 
 export default function InventoryPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [items, setItems] = useState<MenuItemWithStock[]>([]);
   const [adjustments, setAdjustments] = useState<any[]>([]);
   const [stockData, setStockData] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -62,16 +62,21 @@ export default function InventoryPage() {
     try {
       const result = await getMenusByRestaurant(selectedRestaurantId);
       if (result.success && result.data) {
-        const allItems: MenuItem[] = [];
+        const allItems: MenuItemWithStock[] = [];
         for (const menu of result.data) {
           const itemsResult = await getMenuItemsByMenu(menu.id);
           if (itemsResult.success && itemsResult.data) {
-            allItems.push(...itemsResult.data);
+            // Convert MenuItem to MenuItemWithStock
+            const itemsWithStock = itemsResult.data.map((item: MenuItem) => ({
+              ...item,
+              restaurant_id: selectedRestaurantId,
+              current_stock: null,
+            }));
+            allItems.push(...itemsWithStock);
           }
         }
-        setItems(allItems);
         await loadAdjustments();
-        calculateStock(allItems);
+        calculateStockForItems(allItems);
       }
     } catch (error) {
       toast.error('Failed to load menu items');
@@ -89,11 +94,11 @@ export default function InventoryPage() {
     }
   };
 
-  const calculateStock = async (itemList: MenuItem[]) => {
+  const calculateStockForItems = async (itemList: MenuItemWithStock[]) => {
     const data = await getInventoryAdjustments();
     const stockMap: Record<string, number> = {};
     
-    itemList.forEach((item) => {
+    const updatedItems = itemList.map((item) => {
       if (item.stock_mode === 'FINITE') {
         const itemAdjustments = data.filter((adj: any) => adj.item_id === item.id);
         const stockIn = itemAdjustments
@@ -106,11 +111,15 @@ export default function InventoryPage() {
           .filter((adj: any) => adj.type === 'SPOILAGE')
           .reduce((sum: number, adj: any) => sum + adj.quantity, 0);
         
-        stockMap[item.id] = stockIn - stockOut - spoilage;
+        const currentStock = stockIn - stockOut - spoilage;
+        stockMap[item.id] = currentStock;
+        return { ...item, current_stock: currentStock };
       }
+      return item;
     });
     
     setStockData(stockMap);
+    setItems(updatedItems);
   };
 
   const handleAddAdjustment = (itemId?: string) => {
@@ -260,9 +269,7 @@ export default function InventoryPage() {
             </CardHeader>
             <CardContent>
               <StockOverview
-                items={items}
-                stockData={stockData}
-                onAddAdjustment={handleAddAdjustment}
+                menuItems={items}
               />
             </CardContent>
           </Card>

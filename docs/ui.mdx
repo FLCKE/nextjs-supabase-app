@@ -1,0 +1,152 @@
+# UI Foundation Documentation
+
+Complete guide to the WEGO RestoPay design system and UI components.
+
+## Design System
+
+### Color Tokens
+All colors are defined using CSS variables with light/dark mode support.
+
+### Typography Scale
+- H1: 48px (3rem) extrabold
+- H2: 36px (2.25rem) semibold  
+- H3: 30px (1.875rem) semibold
+- H4: 24px (1.5rem) semibold
+- H5: 20px (1.25rem) semibold
+- H6: 16px (1rem) semibold
+- Body: 16px (1rem) regular
+- Small: 14px (0.875rem) medium
+
+### Spacing Rhythm (8px base)
+```css
+--spacing-1: 0.5rem   /* 8px */
+--spacing-2: 1rem     /* 16px */
+--spacing-3: 1.5rem   /* 24px */
+--spacing-4: 2rem     /* 32px */
+--spacing-6: 3rem     /* 48px */
+```
+
+### Border Radius
+Default: 2xl (1.5rem / 24px) for modern look
+
+### Shadows
+Soft, subtle shadows in light mode, slightly stronger in dark mode.
+
+### Container Widths
+- sm: 640px
+- md: 768px
+- lg: 1024px
+- xl: 1280px
+- 2xl: 1536px
+
+## Components
+
+### AppProviders
+Wrap your app with theme, query client, and toaster:
+
+```tsx
+import { AppProviders } from '@/components/providers/app-providers';
+
+<AppProviders>{children}</AppProviders>
+```
+
+### DashboardShell
+Complete dashboard layout with sidebar and header:
+
+```tsx
+import { DashboardShell } from '@/components/layout/dashboard-shell';
+
+<DashboardShell
+  title="Orders"
+  description="Manage customer orders"
+  breadcrumbs={[
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Orders' }
+  ]}
+  primaryAction={<Button>Create Order</Button>}
+  secondaryActions={<Button variant="outline">Export</Button>}
+>
+  {/* Content */}
+</DashboardShell>
+```
+
+### Theme Toggle
+```tsx
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
+<ThemeToggle />
+```
+
+## Accessibility Features
+
+- Skip-to-content link (Tab on page load)
+- Focus rings on all interactive elements
+- Keyboard navigation throughout
+- ARIA labels on icon buttons
+- Semantic HTML structure
+
+## Container Utilities
+
+```tsx
+<div className="container-sm">640px max width</div>
+<div className="container-md">768px max width</div>
+<div className="container-lg">1024px max width</div>
+<div className="container-xl">1280px max width</div>
+<div className="container-2xl">1536px max width</div>
+```
+
+## Grid Utilities
+
+```tsx
+<div className="grid-responsive">
+  {/* Responsive gaps: 4/6/8 */}
+</div>
+
+<div className="grid-cols-responsive">
+  {/* 1 col mobile, 2 tablet, 3 desktop, 4 xl */}
+</div>
+```
+
+## Best Practices
+
+1. Use semantic color tokens (bg-primary, text-foreground)
+2. Follow 8px spacing rhythm
+3. Use container utilities for consistent widths
+4. Implement loading and error states
+5. Ensure keyboard accessibility
+6. Use toast notifications for feedback
+
+## Examples
+
+### Page with Dashboard Shell
+```tsx
+export default function OrdersPage() {
+  return (
+    <DashboardShell
+      title="Orders"
+      description="Track and manage orders"
+      breadcrumbs={[
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Orders' }
+      ]}
+      primaryAction={<Button>New Order</Button>}
+    >
+      <div className="grid-cols-responsive">
+        <Card>...</Card>
+      </div>
+    </DashboardShell>
+  );
+}
+```
+
+### Toast Notifications
+```tsx
+import { toast } from 'sonner';
+
+toast.success('Order created!');
+toast.error('Failed to save');
+toast.info('Processing...');
+toast.warning('Low stock');
+```
+
+For complete component documentation, see [shadcn/ui docs](https://ui.shadcn.com).
