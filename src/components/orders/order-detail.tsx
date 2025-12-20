@@ -52,7 +52,7 @@ export function OrderDetail({ order }: OrderDetailProps) {
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);
     try {
-      const result = await updateOrderStatus(order.id, { status: newStatus });
+      const result = await updateOrderStatus(order.id, newStatus);
       
       if (result.success) {
         toast.success('Order status updated');

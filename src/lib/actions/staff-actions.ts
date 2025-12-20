@@ -199,8 +199,8 @@ export async function loginStaff(formData: FormData) {
       type: 'magiclink',
       email: userEmail,
       options: {
-        // The user will be redirected here after signing in
-        redirectTo: '/dashboard/pos',
+        // The user will be redirected to the callback route to exchange the code for a session
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/staff-dashboard`,
       },
     });
 

@@ -29,6 +29,7 @@ export async function updateSession(request: NextRequest) {
   let session = null;
   let authError = null;
   try {
+    console.log(supabase);
     // 3. Get the session (which also implicitly refreshes tokens if needed)
     const { data, error } = await supabase.auth.getSession();
     if (error) {
@@ -50,40 +51,13 @@ export async function updateSession(request: NextRequest) {
   
   if (authError) {
       console.error("Middleware: Auth error detected, proceeding without authenticated user.");
-      // If there's an auth error, we might want to clear cookies to avoid endless loops
-      // response.cookies.delete('sb-access-token'); // Example
-      // response.cookies.delete('sb-refresh-token'); // Example
   }
 
 
   const { pathname } = request.nextUrl;
-  const publicPaths = ['/', '/sign-in', '/sign-up', '/staff-login', '/restaurants'];
+  const publicPaths = ['/', '/sign-in', '/sign-up', '/staff-login', '/restaurants', '/auth/callback'];
   const authRoutes = ['/sign-in', '/sign-up', '/staff-login'];
   const dashboardRoutes = ['/dashboard', '/dashboard/pos'];
-
-  // --- Start: Fragment stripping and primary redirect logic ---
-  // This needs to happen AFTER createServerClient has processed the cookies
-  // and getSession() has run, potentially updating the session.
-  // If the URL currently contains an access_token in the hash, it's a Supabase callback.
-  // We need to strip the hash and redirect to a clean URL, propagating the updated cookies.
-  if (request.nextUrl.hash && request.nextUrl.hash.includes('access_token')) {
-    const cleanUrl = request.nextUrl.clone();
-    cleanUrl.hash = ''; // Remove the hash
-    // Create a new response for the redirect, and ensure the updated cookies are included.
-    const redirectResponse = NextResponse.redirect(cleanUrl.toString());
-    // Copy all cookies from the `response` (which contains updated cookies from createServerClient)
-    // to the `redirectResponse`.
-    // The `response` object itself now holds the `set-cookie` headers
-    // from createServerClient's `setAll` function. We need to copy these.
-    response.headers.forEach((value, key) => {
-        if (key.toLowerCase().startsWith('set-cookie')) {
-            redirectResponse.headers.append(key, value);
-        }
-    });
-    return redirectResponse;
-  }
-  // --- End: Fragment stripping and primary redirect logic ---
-
 
   if (user) {
     // User is authenticated, fetch profile to determine role
@@ -97,11 +71,11 @@ export async function updateSession(request: NextRequest) {
 
     if (profile) {
       if (profile.role === 'staff') {
-        homePath = '/dashboard/pos';
+        homePath = '/staff-dashboard';
       } else if (profile.role === 'owner') {
         homePath = '/dashboard';
       } else if (profile.role === 'admin') {
-        homePath = '/dashboard/admin'; // Assuming an admin dashboard exists
+        homePath = '/dashboard/admin';
       }
     }
 
@@ -112,23 +86,34 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     
-    // If staff tries to access owner dashboard, redirect to POS dashboard
+    // If user is authenticated and on home page, redirect to their home path
+    if (pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = homePath;
+      return NextResponse.redirect(url);
+    }
+    
+    // If staff tries to access restricted dashboard areas, redirect to their dashboard
     if (profile?.role === 'staff' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/pos')) {
         const url = request.nextUrl.clone();
-        url.pathname = '/dashboard/pos';
+        url.pathname = '/staff-dashboard';
         return NextResponse.redirect(url);
     }
 
-  } else {
-    // User is NOT authenticated
-    // If trying to access a dashboard route or other protected route, redirect to sign-in
-    if (dashboardRoutes.some(route => pathname.startsWith(route))) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/sign-in';
-      return NextResponse.redirect(url);
-    }
-    // Allow access to other public paths
+} else {
+  // User is NOT authenticated
+  // If trying to access a dashboard route or other protected route, redirect to sign-in
+  // BUT: Don't redirect if there's an auth code in the URL (magic link/callback flow)
+  const hasAuthCode = request.nextUrl.searchParams.has('code');
+  const hasAuthToken = request.nextUrl.hash.includes('access_token');
+  
+  if (dashboardRoutes.some(route => pathname.startsWith(route)) && !hasAuthCode && !hasAuthToken) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/sign-in';
+    return NextResponse.redirect(url);
   }
+  // Allow access to other public paths
+}
 
   return response; // Return the response object that may contain updated cookies
 }

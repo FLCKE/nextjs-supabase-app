@@ -12,13 +12,13 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const { id } = await params;
   const result = await getOrderById(id);
 
-  if (!result.success || !result.data) {
+  if (!result) {
     notFound();
   }
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <OrderDetail order={result.data} />
+      <OrderDetail order={result} />
     </div>
   );
 }

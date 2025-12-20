@@ -10,8 +10,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { signin } from './actions';
 import { toast } from 'sonner';
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSupabase } from '@/components/providers/supabase-provider';
 
 import GeometricBackground from '@/components/ui/geometric-background';
 
@@ -22,6 +24,48 @@ const signinSchema = z.object({
 
 export default function SigninPage() {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const { supabase } = useSupabase();
+
+  // Handle magic link tokens from URL fragment
+  useEffect(() => {
+    const handleMagicLink = async () => {
+      const hash = window.location.hash.substring(1); // Remove '#'
+      
+      if (!hash) return;
+
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const type = params.get('type');
+
+      if (!accessToken || type !== 'magiclink') return;
+
+      try {
+        toast.info('Processing magic link...');
+        
+        // Set the session with the token
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: params.get('refresh_token') || '',
+        });
+
+        if (error) {
+          console.error('Magic link error:', error);
+          toast.error('Authentication failed');
+          return;
+        }
+
+        toast.success('Signed in successfully!');
+        // Redirect to POS dashboard for staff
+        router.push('/dashboard/pos');
+      } catch (error) {
+        console.error('Error processing magic link:', error);
+        toast.error('Something went wrong');
+      }
+    };
+
+    handleMagicLink();
+  }, [supabase, router]);
 
   const form = useForm<z.infer<typeof signinSchema>>({
     resolver: zodResolver(signinSchema),

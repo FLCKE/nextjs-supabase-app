@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useCartStore } from '@/lib/cart/cart-store';
-import { createOrder } from '@/lib/actions/order-actions';
+import { createPublicOrder } from '@/lib/actions/public-menu-actions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -123,8 +123,10 @@ export default function CheckoutPage() {
 
     try {
       const orderItems = items.map((item) => ({
-        item_id: item.id,
-        qty: item.quantity,
+        id: item.id,
+        quantity: item.quantity,
+        price_cts: item.price_cts,
+        name: item.name,
       }));
 
       const generalNotes = items
@@ -132,17 +134,18 @@ export default function CheckoutPage() {
         .map((item) => `${item.name}: ${item.notes}`)
         .join('\n');
 
-      const result = await createOrder({
-        table_token: tableToken,
-        items: orderItems,
-        notes: generalNotes || undefined,
-      });
+      const result = await createPublicOrder(
+        tableToken,
+        orderItems,
+        generalNotes || undefined
+      );
 
-      if (result.success && result.data) {
-        setOrderId(result.data.id);
+      if (result.success) {
+        setOrderId('success');
         toast.success('Order placed successfully!', {
-          description: `Order #${result.data.id.slice(0, 8)}`,
+          description: 'Your order has been sent to the kitchen',
         });
+        clearCart();
       } else {
         toast.error('Failed to place order', {
           description: result.error || 'Please try again',

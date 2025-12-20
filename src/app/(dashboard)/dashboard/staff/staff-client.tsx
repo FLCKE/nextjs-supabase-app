@@ -91,10 +91,10 @@ export function StaffClient({ restaurants, initialStaff }: StaffClientProps) {
 
     const result = await createStaffMember(formData);
 
-    if (result.success && result.data) {
+    if (result.success && 'data' in result) {
       toast.success('Staff member created successfully!');
       // Add new staff member to the list without re-fetching
-      setStaff(prevStaff => [...prevStaff, result.data as StaffMember]);
+      setStaff(prevStaff => [...prevStaff, (result as any).data as StaffMember]);
       setIsOpen(false);
       reset();
     } else {

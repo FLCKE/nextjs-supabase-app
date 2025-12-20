@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 export interface PublicMenuItem {
   id: string;
@@ -160,6 +160,117 @@ export async function getPublicMenu(tableToken: string) {
     return {
       success: false,
       error: 'Failed to load menu',
+    };
+  }
+}
+
+/**
+ * Creates an order from public checkout using table token
+ */
+export async function createPublicOrder(
+  tableToken: string,
+  items: Array<{ id: string; quantity: number; price_cts: number; name: string }>,
+  notes?: string
+) {
+  try {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+
+    // Validate table token and get table info
+    const { data: tableInfo, error: tokenError } = await supabase
+      .rpc('validate_table_token', { p_table_token: tableToken })
+      .single();
+
+    if (tokenError || !tableInfo) {
+      return {
+        success: false,
+        error: 'Invalid or inactive table',
+      };
+    }
+
+    const { table_id, location_id, restaurant_id } = tableInfo as {
+      table_id: string;
+      location_id: string;
+      restaurant_id: string;
+    };
+
+    // Calculate totals
+    let totalNetCts = 0;
+    let taxesCts = 0;
+
+    // Fetch menu items to get tax rates
+    const itemIds = items.map(item => item.id);
+    const { data: menuItems, error: menuError } = await supabaseAdmin
+      .from('menu_items')
+      .select('id, tax_rate, currency')
+      .in('id', itemIds);
+
+    if (menuError || !menuItems || menuItems.length === 0) {
+      return {
+        success: false,
+        error: 'Failed to fetch item details',
+      };
+    }
+
+    const currency = menuItems[0].currency || 'USD';
+
+    // Calculate totals with tax
+    for (const item of items) {
+      const menuItem = menuItems.find(m => m.id === item.id);
+      if (!menuItem) {
+        return {
+          success: false,
+          error: `Item ${item.id} not found`,
+        };
+      }
+
+      const itemNetPrice = item.price_cts * item.quantity;
+      const itemTaxes = Math.round(item.price_cts * (menuItem.tax_rate / 100)) * item.quantity;
+      
+      totalNetCts += itemNetPrice;
+      taxesCts += itemTaxes;
+    }
+
+    const totalGrossCts = totalNetCts + taxesCts;
+
+    // Create order using RPC
+    const { error: transactionError } = await supabaseAdmin.rpc('create_order_with_items', {
+      p_restaurant_id: restaurant_id,
+      p_location_id: location_id,
+      p_table_id: table_id,
+      p_notes: notes || null,
+      p_currency: currency,
+      p_total_net_cts: totalNetCts,
+      p_taxes_cts: taxesCts,
+      p_total_gross_cts: totalGrossCts,
+      p_changed_by: null,
+      p_order_items: items.map(item => ({
+        item_id: item.id,
+        name: item.name,
+        qty: item.quantity,
+        unit_price_cts: item.price_cts,
+        total_price_cts: item.price_cts * item.quantity
+      })),
+      p_stock_adjustments: []
+    });
+
+    if (transactionError) {
+      console.error('Error creating order:', transactionError);
+      return {
+        success: false,
+        error: 'Failed to create order',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Order created successfully',
+    };
+  } catch (error) {
+    console.error('Error in createPublicOrder:', error);
+    return {
+      success: false,
+      error: 'An unexpected error occurred',
     };
   }
 }

@@ -180,3 +180,115 @@ export async function getActiveOrdersForTable(tableId: string): Promise<Order[]>
 
   return orders;
 }
+
+/**
+ * Fetches all orders for a specific restaurant
+ * @param restaurantId - The restaurant ID to fetch orders for
+ * @returns Array of orders or error message
+ */
+export async function getOrders(restaurantId?: string): Promise<{ success: boolean; data?: Order[]; error?: string }> {
+  const supabase = await createClient();
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    let query = supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // If restaurantId provided, filter by it
+    if (restaurantId) {
+      query = query.eq('restaurant_id', restaurantId);
+    }
+
+    const { data: orders, error } = await query;
+
+    if (error) {
+      console.error('Error fetching orders:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: orders || [] };
+  } catch (error) {
+    console.error('Unexpected error fetching orders:', error);
+    return { success: false, error: 'Failed to fetch orders' };
+  }
+}
+
+/**
+ * Fetches a specific order by ID with its items
+ * @param orderId - The order ID to fetch
+ * @returns Order with items or null
+ */
+export async function getOrderById(orderId: string): Promise<(Order & { items: any[] }) | null> {
+  const supabase = await createClient();
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return null;
+    }
+
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching order:', error);
+      return null;
+    }
+
+    // Fetch order items
+    const { data: items } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId);
+
+    return {
+      ...order,
+      items: items || []
+    } as Order & { items: any[] };
+  } catch (error) {
+    console.error('Unexpected error fetching order:', error);
+    return null;
+  }
+}
+
+/**
+ * Updates the status of an order
+ * @param orderId - The order ID to update
+ * @param status - The new status
+ * @returns Success or error message
+ */
+export async function updateOrderStatus(orderId: string, status: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Error updating order status:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/dashboard/orders');
+    return { success: true };
+  } catch (error) {
+    console.error('Unexpected error updating order:', error);
+    return { success: false, error: 'Failed to update order' };
+  }
+}

@@ -94,6 +94,22 @@ export type MenuItemWithStock = MenuItem & {
   restaurant_id: string;
 };
 
+export type MenuItemWithMenu = {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cts: number;
+  currency: string;
+  stock_mode: 'FINITE' | 'INFINITE' | 'HIDDEN_WHEN_OOS';
+  stock_qty: number | null;
+  image_url: string | null;
+  category?: string;
+};
+
+export type LocationWithTables = Location & {
+  tables: Table[];
+};
+
 export type OrderStatus = 'PENDING' | 'PAYING' | 'PAID' | 'SERVED' | 'CANCELLED' | 'REFUNDED';
 
 export type Order = {

@@ -21,8 +21,12 @@ export default async function OrdersPage() {
 
   const restaurantId = restaurants?.[0]?.id;
 
-  const result = await getOrders(restaurantId);
-  const orders = result.success ? (result.data || []) : [];
+  // Fetch raw orders from Supabase
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('restaurant_id', restaurantId || '')
+    .order('created_at', { ascending: false });
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -35,7 +39,13 @@ export default async function OrdersPage() {
         </div>
       </div>
 
-      <OrdersTable initialOrders={orders} restaurantId={restaurantId} />
+      {orders && orders.length > 0 ? (
+        <OrdersTable initialOrders={orders as any} restaurantId={restaurantId} />
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No orders found</p>
+        </div>
+      )}
     </div>
   );
 }
