@@ -169,16 +169,6 @@ export async function getMenuItemsWithStock(
       return [];
     }
 
-    // Verify ownership
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('owner_id')
-      .eq('id', restaurantId)
-      .single();
-
-    if (!restaurant || restaurant.owner_id !== user.id) {
-      return [];
-    }
 
     // Get menu items with stock using the view
     const { data, error } = await supabase

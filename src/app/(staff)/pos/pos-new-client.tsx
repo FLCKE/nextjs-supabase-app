@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader, AlertCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+
 import type { Location, Table, MenuItemWithStock } from '@/types';
 import OrderBoard from './components/order-board';
 import PosPanel from './components/pos-panel';
@@ -47,7 +48,7 @@ export default function StaffPosClient({
   const [pendingCount, setPendingCount] = useState(0);
   const [payingCount, setPayingCount] = useState(0);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
-
+  const [hiddenPanel, setHiddenPanel] = useState(false);
   // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
@@ -93,18 +94,16 @@ export default function StaffPosClient({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
       const ordersData = (data || []).map((order: any) => {
         const table = initialLocationsWithTables
           .flatMap(l => l.tables)
           .find(t => t.id === order.table_id);
-
-        return {
-          ...order,
-          table_label: table?.label || 'Unknown',
-        };
-      });
-
+          return {
+            ...order,
+            table_label: table?.label || 'Unknown',
+          };
+        });
+        
       setOrders(ordersData);
       setPendingCount(ordersData.filter((o: Order) => o.status === 'pending').length);
     } catch (error) {
@@ -159,6 +158,10 @@ export default function StaffPosClient({
           <div>
             <h1 className="text-2xl font-bold">{restaurantName} - POS</h1>
             <p className="text-sm text-muted-foreground">Staff Dashboard</p>
+            <Button className='flex gap-2' onClick={()=>{setHiddenPanel(!hiddenPanel)}}>
+              <AlertCircle className="w-4 h-4 text-muted-foreground mt-1" />
+              {!hiddenPanel ? 'Cacher le pannel' : 'Lancer une commande'}
+            </Button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -194,7 +197,7 @@ export default function StaffPosClient({
         </div>
 
         {/* Right: POS Panel */}
-        <div className="w-96 overflow-auto border-l bg-card">
+        <div className={`w-96 overflow-auto border-l bg-card ${hiddenPanel ? 'hidden' : ''}`}>
           <PosPanel
             selectedTable={selectedTable}
             onTableSelect={setSelectedTable}

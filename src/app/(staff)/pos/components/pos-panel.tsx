@@ -123,19 +123,38 @@ export default function PosPanel({
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('orders').insert({
+      const {data, error } = await supabase.from('orders').insert({
         restaurant_id: restaurantId,
         table_id: selectedTable,
         location_id: locationsWithTables[0]?.id, // Get from first location
-        status: 'PENDING',
+        status: 'pending',
         currency: 'USD',
         total_net_cts: subtotal,
         taxes_cts: taxes,
         total_gross_cts: total,
         notes: notes || null,
-      });
+      }).select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating order:', error);
+        throw error;
+      }
+      console.log('Created order:', data);
+      const {data: orderItemsData, error: itemsError } = await supabase.from('order_items').insert(
+        cart.map(item => ({
+          order_id: data![0].id,
+          item_id: item.itemId,
+          name: item.name,
+          qty: item.quantity,
+          unit_price_cts: item.price_cts,
+          total_price_cts: item.price_cts * item.quantity,
+        }))
+      );
+
+      if (itemsError) {
+        console.error('Error creating order items:', itemsError);
+        throw itemsError;
+      }
 
       toast.success('Order created successfully!');
       setCart([]);

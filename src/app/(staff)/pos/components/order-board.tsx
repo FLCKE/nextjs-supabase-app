@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, EyeClosed, EyeIcon } from 'lucide-react';
 import { format, formatDistance } from 'date-fns';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import OrderItems from './order-items';
 
 interface Order {
   id: string;
@@ -28,12 +29,12 @@ interface OrderBoardProps {
 }
 
 const STATUS_CONFIG = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', nextStatus: 'PAYING' },
-  PAYING: { label: 'Paying', color: 'bg-blue-100 text-blue-800', nextStatus: 'PAID' },
-  PAID: { label: 'Paid', color: 'bg-green-100 text-green-800', nextStatus: 'SERVED' },
-  SERVED: { label: 'Served', color: 'bg-gray-100 text-gray-800', nextStatus: null },
-  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800', nextStatus: null },
-  REFUNDED: { label: 'Refunded', color: 'bg-purple-100 text-purple-800', nextStatus: null },
+  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', nextStatus: 'preparing' },
+  preparing: { label: 'preparing', color: 'bg-blue-100 text-blue-800', nextStatus: 'ready' },
+  ready: { label: 'ready', color: 'bg-green-100 text-green-800', nextStatus: 'completed' },
+  completed: { label: 'completed', color: 'bg-gray-100 text-gray-800', nextStatus: null },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', nextStatus: null },
+  // REFUNDED: { label: 'Refunded', color: 'bg-purple-100 text-purple-800', nextStatus: null },
 };
 
 export default function OrderBoard({
@@ -43,15 +44,15 @@ export default function OrderBoard({
 }: OrderBoardProps) {
   const supabase = createClient();
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
-
+  const [orderIdForItems, setOrderIdForItems] = useState<string | null>(null);
   const groupedByStatus = useMemo(() => {
     const grouped: Record<string, Order[]> = {
-      PENDING: [],
-      PAYING: [],
-      PAID: [],
-      SERVED: [],
-      CANCELLED: [],
-      REFUNDED: [],
+      pending: [],
+      preparing: [],
+      ready: [],
+      completed: [],
+      cancelled: [],
+      // REFUNDED: [],
     };
 
     orders.forEach(order => {
@@ -153,6 +154,7 @@ export default function OrderBoard({
                     )}
                   </Button>
                 )}
+                <OrderItems order_id={order.id} />
               </CardContent>
             </Card>
           ))}
@@ -169,10 +171,10 @@ export default function OrderBoard({
 
   return (
     <div className="flex h-full">
-      <StatusColumn status="PENDING" statusOrders={groupedByStatus.PENDING} />
-      <StatusColumn status="PAYING" statusOrders={groupedByStatus.PAYING} />
-      <StatusColumn status="PAID" statusOrders={groupedByStatus.PAID} />
-      <StatusColumn status="SERVED" statusOrders={groupedByStatus.SERVED} />
+      <StatusColumn status="pending" statusOrders={groupedByStatus.pending} />
+      <StatusColumn status="preparing" statusOrders={groupedByStatus.preparing} />
+      <StatusColumn status="ready" statusOrders={groupedByStatus.ready} />
+      <StatusColumn status="completed" statusOrders={groupedByStatus.completed} />
     </div>
   );
 }
