@@ -14,6 +14,8 @@ import {
   BarChart3,
   Shield,
   ChevronRight,
+  TableIcon,
+  QrCode,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -68,6 +70,16 @@ const navGroups: NavGroup[] = [
         href: '/dashboard/orders',
         icon: ShoppingCart,
         badge: 'Live',
+      },
+      {
+        title: 'Tables',
+        href: '/dashboard/tables',
+        icon: TableIcon,
+      },
+      {
+        title: 'QR Codes',
+        href: '/dashboard/qr-codes',
+        icon: QrCode,
       },
       {
         title: 'Payments',

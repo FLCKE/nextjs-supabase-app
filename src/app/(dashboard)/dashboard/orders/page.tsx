@@ -1,5 +1,5 @@
 import { OrdersTable } from '@/components/orders/orders-table';
-import { getOrders } from '@/lib/actions/order-actions';
+import { OrdersFilter } from '@/components/orders/orders-filter';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -12,12 +12,12 @@ export default async function OrdersPage() {
     return null;
   }
 
-  // Get user's restaurant
+  // Get all user's restaurants
   const { data: restaurants } = await supabase
     .from('restaurants')
-    .select('id')
+    .select('id, name')
     .eq('owner_id', user.id)
-    .limit(1);
+    .order('name');
 
   const restaurantId = restaurants?.[0]?.id;
 
@@ -30,14 +30,17 @@ export default async function OrdersPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">
-            View and manage customer orders in real-time
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Orders</h1>
+        <p className="text-muted-foreground">
+          View and manage customer orders in real-time
+        </p>
       </div>
+
+      <OrdersFilter 
+        restaurants={restaurants || []} 
+        initialRestaurantId={restaurantId}
+      />
 
       {orders && orders.length > 0 ? (
         <OrdersTable initialOrders={orders as any} restaurantId={restaurantId} />

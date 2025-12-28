@@ -16,8 +16,24 @@ export function useOrdersRealtime(restaurantId?: string) {
     const fetchOrders = async () => {
       try {
         let query = supabase
-          .from('orders_with_details')
-          .select('*')
+          .from('orders')
+          .select(`
+            id,
+            status,
+            currency,
+            total_net_cts,
+            taxes_cts,
+            total_gross_cts,
+            notes,
+            created_at,
+            updated_at,
+            restaurant_id,
+            location_id,
+            table_id,
+            tables!inner(label),
+            locations!inner(name),
+            order_items(id)
+          `)
           .order('created_at', { ascending: false });
 
         if (restaurantId) {
@@ -30,7 +46,13 @@ export function useOrdersRealtime(restaurantId?: string) {
           console.error('Error fetching orders:', error);
           toast.error('Failed to fetch orders');
         } else {
-          setOrders(data || []);
+          const formattedOrders = (data || []).map((order: any) => ({
+            ...order,
+            table_label: order.tables?.label || 'Unknown',
+            location_name: order.locations?.name || 'Unknown',
+            item_count: order.order_items?.length || 0,
+          })) as OrderWithDetails[];
+          setOrders(formattedOrders);
         }
       } catch (error) {
         console.error('Error fetching orders:', error);
@@ -42,7 +64,7 @@ export function useOrdersRealtime(restaurantId?: string) {
 
     fetchOrders();
 
-    // Subscribe to realtime changes
+    // Subscribe to realtime changes on orders table
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -58,17 +80,39 @@ export function useOrdersRealtime(restaurantId?: string) {
           if (payload.eventType === 'INSERT') {
             // Fetch the full order with details
             const { data: newOrder } = await supabase
-              .from('orders_with_details')
-              .select('*')
+              .from('orders')
+              .select(`
+                id,
+                status,
+                currency,
+                total_net_cts,
+                taxes_cts,
+                total_gross_cts,
+                notes,
+                created_at,
+                updated_at,
+                restaurant_id,
+                location_id,
+                table_id,
+                tables!inner(label),
+                locations!inner(name),
+                order_items(id)
+              `)
               .eq('id', payload.new.id)
               .single();
 
             if (newOrder) {
               // Check if order belongs to the restaurant
               if (!restaurantId || newOrder.restaurant_id === restaurantId) {
-                setOrders((prev) => [newOrder, ...prev]);
+                const formatted = {
+                  ...newOrder,
+                  table_label: newOrder.tables?.label || 'Unknown',
+                  location_name: newOrder.locations?.name || 'Unknown',
+                  item_count: newOrder.order_items?.length || 0,
+                } as OrderWithDetails;
+                setOrders((prev) => [formatted, ...prev]);
                 toast.success('New order received!', {
-                  description: `Table ${newOrder.table_label} - ${newOrder.item_count} items`,
+                  description: `Table ${formatted.table_label} - ${formatted.item_count} items`,
                 });
               }
             }
@@ -76,7 +120,7 @@ export function useOrdersRealtime(restaurantId?: string) {
             setOrders((prev) =>
               prev.map((order) =>
                 order.id === payload.new.id
-                  ? { ...order, ...payload.new }
+                  ? { ...order, ...payload.new, status: payload.new.status }
                   : order
               )
             );

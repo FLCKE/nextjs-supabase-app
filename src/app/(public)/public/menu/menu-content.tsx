@@ -79,7 +79,7 @@ export function MenuContent({ menuData, tableToken }: MenuContentProps) {
     <>
       <main className="container-lg py-6 pb-32" role="main">
         {/* Search and Filters */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-8">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -88,36 +88,39 @@ export function MenuContent({ menuData, tableToken }: MenuContentProps) {
               placeholder="Search menu items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-10"
               aria-label="Search menu items"
             />
           </div>
 
           {/* Category Filters */}
           {menuData.categories.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar" role="group" aria-label="Category filters">
-              <Badge
-                variant={selectedCategory === null ? 'default' : 'outline'}
-                className="cursor-pointer whitespace-nowrap"
-                onClick={() => setSelectedCategory(null)}
-              >
-                All Items ({menuData.menu_items.length})
-              </Badge>
-              {menuData.categories.map((category) => {
-                const count = menuData.menu_items.filter(
-                  (item) => item.category === category
-                ).length;
-                return (
-                  <Badge
-                    key={category}
-                    variant={selectedCategory === category ? 'default' : 'outline'}
-                    className="cursor-pointer whitespace-nowrap"
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    {category} ({count})
-                  </Badge>
-                );
-              })}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Filter by category</p>
+              <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar" role="group" aria-label="Category filters">
+                <Badge
+                  variant={selectedCategory === null ? 'default' : 'outline'}
+                  className="cursor-pointer whitespace-nowrap transition-colors hover:opacity-80"
+                  onClick={() => setSelectedCategory(null)}
+                >
+                  All ({menuData.menu_items.length})
+                </Badge>
+                {menuData.categories.map((category) => {
+                  const count = menuData.menu_items.filter(
+                    (item) => item.category === category
+                  ).length;
+                  return (
+                    <Badge
+                      key={category}
+                      variant={selectedCategory === category ? 'default' : 'outline'}
+                      className="cursor-pointer whitespace-nowrap transition-colors hover:opacity-80"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category} ({count})
+                    </Badge>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

@@ -22,11 +22,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { formatDistanceToNow } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface OrdersTableProps {
   initialOrders: OrderWithDetails[];
   restaurantId?: string;
 }
+
+const ITEMS_PER_PAGE = 10;
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
@@ -40,12 +43,22 @@ const statusColors: Record<string, string> = {
 export function OrdersTable({ initialOrders, restaurantId }: OrdersTableProps) {
   const { orders: realtimeOrders, isLoading } = useOrdersRealtime(restaurantId);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const orders = isLoading ? initialOrders : realtimeOrders;
 
   const filteredOrders = statusFilter === 'ALL'
     ? orders
     : orders.filter((order) => order.status === statusFilter);
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
 
   const formatCurrency = (cents: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -65,7 +78,7 @@ export function OrdersTable({ initialOrders, restaurantId }: OrdersTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -99,7 +112,7 @@ export function OrdersTable({ initialOrders, restaurantId }: OrdersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
+            {paginatedOrders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-mono text-xs">
                   {order.id.slice(0, 8)}
@@ -137,6 +150,35 @@ export function OrdersTable({ initialOrders, restaurantId }: OrdersTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

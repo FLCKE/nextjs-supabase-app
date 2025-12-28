@@ -165,6 +165,136 @@ export async function getPublicMenu(tableToken: string) {
 }
 
 /**
+ * Fetch public menu by restaurant ID (no authentication required, no specific table)
+ */
+export async function getPublicMenuByRestaurant(restaurantId: string) {
+  try {
+    const supabase = await createClient();
+
+    // Get restaurant and first location info
+    const { data: restaurantData, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select(`
+        id,
+        name,
+        currency
+      `)
+      .eq('id', restaurantId)
+      .single();
+
+    if (restaurantError || !restaurantData) {
+      return {
+        success: false,
+        error: 'Restaurant not found',
+      };
+    }
+
+    // Get first location
+    const { data: locations, error: locationsError } = await supabase
+      .from('locations')
+      .select('id, name')
+      .eq('restaurant_id', restaurantId)
+      .limit(1);
+
+    if (locationsError || !locations || locations.length === 0) {
+      return {
+        success: false,
+        error: 'Location not found',
+      };
+    }
+
+    const location = locations[0];
+
+    // Get active menu items for this restaurant
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select(`
+        id,
+        name,
+        description,
+        price_cts,
+        tax_rate,
+        category,
+        image_url,
+        active,
+        stock_mode,
+        stock_qty,
+        menu_id,
+        menus!inner(
+          name,
+          active,
+          restaurant_id
+        )
+      `)
+      .eq('menus.restaurant_id', restaurantId)
+      .eq('menus.active', true)
+      .eq('active', true)
+      .order('category')
+      .order('name');
+
+    if (menuError) {
+      return {
+        success: false,
+        error: 'Failed to load menu items',
+      };
+    }
+
+    // Filter out items with zero stock
+    const availableItems = (menuItems || []).filter((item: any) => {
+      if (item.stock_mode === 'FINITE') {
+        return item.stock_qty !== null && item.stock_qty > 0;
+      }
+      return true;
+    });
+
+    // Transform menu items
+    const transformedItems: PublicMenuItem[] = availableItems.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price_cts: item.price_cts,
+      tax_rate: item.tax_rate || 0,
+      category: item.category,
+      image_url: item.image_url,
+      active: item.active,
+      stock_mode: item.stock_mode,
+      stock_qty: item.stock_qty,
+      menu_id: item.menu_id,
+      menu_name: item.menus.name,
+    }));
+
+    // Get unique categories
+    const categories = [
+      ...new Set(
+        transformedItems
+          .map((item) => item.category)
+          .filter((cat): cat is string => cat !== null)
+      ),
+    ];
+
+    const result: PublicMenuData = {
+      restaurant_name: restaurantData.name,
+      location_name: location.name,
+      table_label: '', // No specific table for restaurant-level QR
+      currency: restaurantData.currency || 'USD',
+      menu_items: transformedItems,
+      categories,
+    };
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error('Error fetching public menu by restaurant:', error);
+    return {
+      success: false,
+      error: 'Failed to load menu',
+    };
+  }
+}
+
+/**
  * Creates an order from public checkout using table token
  */
 export async function createPublicOrder(

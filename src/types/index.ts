@@ -51,6 +51,17 @@ export type Table = {
   updated_at: string;
 };
 
+export type RestaurantTable = {
+  id: string;
+  location_id: string;
+  table_number: string | number;
+  capacity: number;
+  status: 'available' | 'occupied';
+  location_name?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type Menu = {
   id: string;
   restaurant_id: string;
