@@ -88,7 +88,7 @@ export function TablesClient() {
       const result = await getTablesByRestaurant(restaurantId);
 
       if (result.success && result.data) {
-        setTables(result.data);
+        setTables(result.data as Table[]);
       } else {
         toast.error(result.error || 'Failed to load tables');
       }

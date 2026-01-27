@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/lib/cart/cart-store';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface CartSummaryBarProps {
   currency: string;
@@ -29,16 +30,13 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
     }).format(cents / 100);
   };
 
-  if (itemCount === 0) {
-    return null;
-  }
-
   return (
     <>
       {/* Spacer to prevent content from being hidden under the sticky bar */}
-      <div className="h-20 md:h-24" aria-hidden="true" />
+      {itemCount > 0 && <div className="h-20 md:h-24" aria-hidden="true" />}
 
       {/* Sticky Cart Bar */}
+      {itemCount > 0 && (
       <div
         className={cn(
           "fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg transition-all z-50",
@@ -114,7 +112,17 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
             {/* Checkout Button */}
             <Button
               size="lg"
-              onClick={() => router.push('/public/checkout')}
+              onClick={() => {
+                const currentToken = useCartStore.getState().tableToken;
+                if (!currentToken) {
+                  toast.error('No order context', {
+                    description: 'Please scan a QR code or select a restaurant',
+                  });
+                  return;
+                }
+                const queryParam = `?table_token=${encodeURIComponent(currentToken)}`;
+                router.push(`/public/checkout${queryParam}`);
+              }}
               className="font-semibold"
               aria-label={`Proceed to checkout with ${itemCount} items`}
             >
@@ -123,6 +131,7 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }

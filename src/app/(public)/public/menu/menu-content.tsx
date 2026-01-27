@@ -12,17 +12,24 @@ import type { PublicMenuData } from '@/lib/actions/public-menu-actions';
 interface MenuContentProps {
   menuData: PublicMenuData;
   tableToken: string;
+  restaurantId?: string;
 }
 
-export function MenuContent({ menuData, tableToken }: MenuContentProps) {
+export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentProps) {
   const { setTableToken } = useCartStore();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
-  // Set table token on mount
+  // Set table token or restaurant ID on mount
   React.useEffect(() => {
-    setTableToken(tableToken);
-  }, [tableToken, setTableToken]);
+    // Prefer tableToken if available (QR code from table)
+    if (tableToken) {
+      setTableToken(tableToken);
+    } else if (restaurantId) {
+      // Fall back to restaurant ID for non-QR access
+      setTableToken(restaurantId);
+    }
+  }, [tableToken, restaurantId, setTableToken]);
 
   // Filter items
   const filteredItems = React.useMemo(() => {

@@ -46,27 +46,27 @@ export async function GET(request: NextRequest) {
     // Get locations for the restaurant
     const { data: locations } = await supabase
       .from('locations')
-      .select('id, name, restaurant_id')
+      .select('id, name, restaurant_id, timezone, created_at, updated_at')
       .eq('restaurant_id', restaurantId)
       .order('name');
 
     let locationsWithTables: LocationWithTables[] = [];
 
     if (locations) {
-      locationsWithTables = await Promise.all(
+      locationsWithTables = (await Promise.all(
         locations.map(async (location) => {
           const { data: tables } = await supabase
             .from('tables')
-            .select('id, label, qr_token, location_id, active')
+            .select('id, label, qr_token, location_id, active, created_at, updated_at')
             .eq('location_id', location.id)
             .order('label');
 
           return {
-            location,
-            tables: tables || [],
+            location: location as Location,
+            tables: (tables || []) as Table[],
           };
         })
-      );
+      )) as LocationWithTables[];
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { uuid } from 'zod';
 
 export interface PublicMenuItem {
   id: string;
@@ -84,7 +85,6 @@ export async function getPublicMenu(tableToken: string) {
         description,
         price_cts,
         tax_rate,
-        category,
         image_url,
         active,
         stock_mode,
@@ -92,14 +92,13 @@ export async function getPublicMenu(tableToken: string) {
         menu_id,
         menus!inner(
           name,
-          active,
+          is_active,
           restaurant_id
         )
       `)
       .eq('menus.restaurant_id', restaurant_id)
-      .eq('menus.active', true)
+      .eq('menus.is_active', true)
       .eq('active', true)
-      .order('category')
       .order('name');
 
     if (menuError) {
@@ -124,7 +123,7 @@ export async function getPublicMenu(tableToken: string) {
       description: item.description,
       price_cts: item.price_cts,
       tax_rate: item.tax_rate || 0,
-      category: item.category,
+      category: null,
       image_url: item.image_url,
       active: item.active,
       stock_mode: item.stock_mode,
@@ -193,8 +192,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
     const { data: locations, error: locationsError } = await supabase
       .from('locations')
       .select('id, name')
-      .eq('restaurant_id', restaurantId)
-      .limit(1);
+      .eq('restaurant_id', restaurantId);
 
     if (locationsError || !locations || locations.length === 0) {
       return {
@@ -204,6 +202,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
     }
 
     const location = locations[0];
+    console.log('Using location:', locations);
 
     // Get active menu items for this restaurant
     const { data: menuItems, error: menuError } = await supabase
@@ -214,7 +213,6 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
         description,
         price_cts,
         tax_rate,
-        category,
         image_url,
         active,
         stock_mode,
@@ -222,17 +220,17 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
         menu_id,
         menus!inner(
           name,
-          active,
+          is_active,
           restaurant_id
         )
       `)
       .eq('menus.restaurant_id', restaurantId)
-      .eq('menus.active', true)
+      .eq('menus.is_active', true)
       .eq('active', true)
-      .order('category')
       .order('name');
 
     if (menuError) {
+      console.error('Menu items fetch error:', menuError);
       return {
         success: false,
         error: 'Failed to load menu items',
@@ -254,7 +252,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
       description: item.description,
       price_cts: item.price_cts,
       tax_rate: item.tax_rate || 0,
-      category: item.category,
+      category: null,
       image_url: item.image_url,
       active: item.active,
       stock_mode: item.stock_mode,

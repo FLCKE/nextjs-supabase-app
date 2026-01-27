@@ -5,6 +5,9 @@ import { getPublicMenu, getPublicMenuByRestaurant } from '@/lib/actions/public-m
 import { MenuContent } from './menu-content';
 import { MenuSkeleton } from '@/components/public/menu-skeleton';
 import { RestaurantSelector } from '@/components/public/restaurant-selector';
+import { CartButton } from '@/components/public/cart-button';
+import { CartDrawer } from '@/components/public/cart-drawer';
+import { MenuPageClient } from './menu-page-client';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +18,8 @@ interface PublicMenuPageProps {
 
 export default async function PublicMenuPage({ searchParams }: PublicMenuPageProps) {
   const params = await searchParams;
-  const tableToken = params.table_token;
-  const restaurantIdParam = params.restaurant;
+  const tableToken = params?.table_token;
+  const restaurantIdParam = params?.restaurant;
   const supabase = await createClient();
 
   // If neither table_token nor restaurant param provided, check if user is logged in
@@ -74,55 +77,53 @@ export default async function PublicMenuPage({ searchParams }: PublicMenuPagePro
     .order('name');
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b shadow-sm">
-        <div className="container-lg py-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <Store className="h-6 w-6 text-primary" />
-            <div className="flex-1">
-              <h1 className="text-xl font-bold">{data.restaurant_name}</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                <span>{data.location_name}</span>
-                {data.table_label && (
-                  <>
-                    <span>•</span>
-                    <span>Table {data.table_label}</span>
-                  </>
-                )}
+    <MenuPageClient>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-card border-b shadow-sm">
+          <div className="container-lg py-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Store className="h-6 w-6 text-primary" />
+              <div className="flex-1">
+                <h1 className="text-xl font-bold">{data.restaurant_name}</h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  <span>{data.location_name}</span>
+                  {data.table_label && (
+                    <>
+                      <span>•</span>
+                      <span>Table {data.table_label}</span>
+                    </>
+                  )}
+                </div>
               </div>
+              <Suspense fallback={null}>
+                <CartButton />
+              </Suspense>
             </div>
+
           </div>
+        </header>
 
-          {/* Restaurant selector */}
-          {restaurants && restaurants.length > 1 && (
-            <RestaurantSelector 
-              restaurants={restaurants}
-              currentRestaurantId={restaurantIdParam}
-              currentTableToken={tableToken}
-            />
-          )}
-        </div>
-      </header>
-
-      {/* Live region for screen reader announcements */}
-      <div
-        id="cart-announcements"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
-
-      {/* Main Content */}
-      <Suspense fallback={<MenuSkeleton />}>
-        <MenuContent
-          menuData={data}
-          tableToken={tableToken}
+        {/* Live region for screen reader announcements */}
+        <div
+          id="cart-announcements"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
         />
-      </Suspense>
-    </div>
+
+        {/* Main Content */}
+        <Suspense fallback={<MenuSkeleton />}>
+          <MenuContent
+            menuData={data}
+            tableToken={tableToken ? tableToken : ''}
+            restaurantId={restaurantIdParam}
+          />
+        </Suspense>
+      </div>
+    </MenuPageClient>
   );
 }
 

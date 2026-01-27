@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Minus, Trash2, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,12 @@ import { cn } from '@/lib/utils';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const {
     items,
     tableToken,
+    setTableToken,
     updateQuantity,
     removeItem,
     updateNotes,
@@ -29,6 +32,14 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [isOffline, setIsOffline] = React.useState(false);
+
+  // Restore table token from URL if not in store
+  React.useEffect(() => {
+    const urlToken = searchParams.get('table_token');
+    if (urlToken && !tableToken) {
+      setTableToken(urlToken);
+    }
+  }, [searchParams, tableToken, setTableToken]);
 
   const subtotal = getSubtotal();
   const taxes = getTaxes();
@@ -105,10 +116,14 @@ export default function CheckoutPage() {
   };
 
   const handleConfirmOrder = async () => {
-    if (!tableToken) {
+    const currentToken = tableToken || searchParams.get('table_token');
+    
+    if (!currentToken) {
       toast.error('Invalid session', {
-        description: 'Please scan the QR code again',
+        description: 'Please scan the QR code again to start a new order',
       });
+      // Redirect to menu to restart
+      setTimeout(() => router.push('/public/menu'), 2000);
       return;
     }
 
@@ -135,7 +150,7 @@ export default function CheckoutPage() {
         .join('\n');
 
       const result = await createPublicOrder(
-        tableToken,
+        currentToken,
         orderItems,
         generalNotes || undefined
       );
