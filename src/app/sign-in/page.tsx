@@ -14,8 +14,7 @@ import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/components/providers/supabase-provider';
-
-import GeometricBackground from '@/components/ui/geometric-background';
+import { ArrowLeft, LogIn } from 'lucide-react';
 
 const signinSchema = z.object({
   email: z.string().email(),
@@ -90,46 +89,89 @@ export default function SigninPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-700 to-purple-900 relative">
-      <GeometricBackground />
-      <Card className="w-full max-w-md bg-white/10 backdrop-blur-lg border-none text-white z-10">
-        <CardHeader className="text-center">
-          <Link href="/" className="text-4xl font-bold text-white tracking-wider mb-4">
-            Foodie
-          </Link>
-          <CardTitle className="text-3xl">Sign In</CardTitle>
-          <CardDescription className="text-gray-300">Welcome back! Sign in to your account.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...form.register('email')} className="bg-white/20 border-none" />
-              {form.formState.errors.email && (
-                <p className="text-red-400 text-sm">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...form.register('password')} className="bg-white/20 border-none" />
-              {form.formState.errors.password && (
-                <p className="text-red-400 text-sm">{form.formState.errors.password.message}</p>
-              )}
-            </div>
-            <Button type="submit" className="w-full bg-purple-700 hover:bg-purple-800" disabled={isPending}>
-              {isPending ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-          <div className="text-center mt-4">
-            <p className="text-sm">
-              Don't have an account?{' '}
-              <Link href="/sign-up" className="text-purple-400 hover:underline">
-                Sign up
-              </Link>
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="text-2xl font-bold text-orange-600 flex items-center gap-2">
+              RestoPay
+            </Link>
+            <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-xs border shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl mb-2">Connexion</CardTitle>
+            <CardDescription>Connectez-vous à votre compte RestoPay</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  {...form.register('email')}
+                  className="border-gray-300"
+                />
+                {form.formState.errors.email && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mot de passe</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...form.register('password')}
+                  className="border-gray-300"
+                />
+                {form.formState.errors.password && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.password.message}</p>
+                )}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 h-10"
+                disabled={isPending}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                {isPending ? 'Connexion...' : 'Se connecter'}
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">ou</span>
+              </div>
+            </div>
+
+            {/* Sign Up Link */}
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Pas encore de compte?{' '}
+                <Link href="/sign-up" className="text-orange-600 font-semibold hover:text-orange-700">
+                  Créer un compte
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

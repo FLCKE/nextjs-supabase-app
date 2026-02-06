@@ -180,7 +180,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
       `)
       .eq('id', restaurantId)
       .single();
-
+      // console.log('Fetched restaurant data:', restaurantData);
     if (restaurantError || !restaurantData) {
       return {
         success: false,
@@ -202,7 +202,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
     }
 
     const location = locations[0];
-    console.log('Using location:', locations);
+    // console.log('Using location:', locations);
 
     // Get active menu items for this restaurant
     const { data: menuItems, error: menuError } = await supabase
@@ -218,6 +218,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
         stock_mode,
         stock_qty,
         menu_id,
+        category,
         menus!inner(
           name,
           is_active,
@@ -252,7 +253,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
       description: item.description,
       price_cts: item.price_cts,
       tax_rate: item.tax_rate || 0,
-      category: null,
+      category: item.category,
       image_url: item.image_url,
       active: item.active,
       stock_mode: item.stock_mode,

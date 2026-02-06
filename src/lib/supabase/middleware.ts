@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
   let session = null;
   let authError = null;
   try {
-    console.log(supabase);
+    // console.log(supabase);
     // 3. Get the session (which also implicitly refreshes tokens if needed)
     const { data, error } = await supabase.auth.getSession();
     if (error) {

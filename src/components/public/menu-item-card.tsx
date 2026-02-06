@@ -2,13 +2,15 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { Plus, Minus, Check } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Minus, Check, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCartStore } from '@/lib/cart/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 interface MenuItemCardProps {
   id: string;
@@ -37,6 +39,7 @@ export function MenuItemCard({
 }: MenuItemCardProps) {
   const { items, addItem, updateQuantity } = useCartStore();
   const [isAdding, setIsAdding] = React.useState(false);
+  const searchParams = useSearchParams();
   
   const cartItem = items.find((item) => item.id === id);
   const quantity = cartItem?.quantity || 0;
@@ -50,6 +53,15 @@ export function MenuItemCard({
 
   const isLowStock = stock_mode === 'FINITE' && stock_qty !== null && stock_qty <= 5;
   const isOutOfStock = stock_mode === 'FINITE' && (stock_qty === null || stock_qty === 0);
+
+  // Build product page URL with search params
+  const productUrl = React.useMemo(() => {
+    const params = new URLSearchParams(searchParams);
+    params.set('item', id);
+    const baseUrl = `/public/product/${id}`;
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  }, [id, searchParams]);
 
   const handleAdd = () => {
     if (isOutOfStock) return;
@@ -107,34 +119,47 @@ export function MenuItemCard({
   return (
     <Card 
       className={cn(
-        "h-full transition-all hover:shadow-md",
+        "h-full transition-all hover:shadow-md flex flex-col",
         isOutOfStock && "opacity-60"
       )}
       role="article"
       aria-label={`Menu item: ${name}`}
     >
-      {image_url && (
-        <div className="relative w-full h-48 overflow-hidden rounded-t-lg bg-muted">
-          <Image
-            src={image_url}
-            alt={name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-          {isOutOfStock && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-              <Badge variant="destructive" className="text-base">
-                Out of Stock
-              </Badge>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Card Header with Image and View Details Link */}
+      <Link
+        href={productUrl}
+        className="relative block overflow-hidden rounded-t-lg bg-muted flex-shrink-0"
+      >
+        {image_url && (
+          <div className="relative w-full h-48 overflow-hidden bg-muted hover:opacity-90 transition-opacity">
+            <Image
+              src={image_url}
+              alt={name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                <Badge variant="destructive" className="text-base">
+                  Out of Stock
+                </Badge>
+              </div>
+            )}
+          </div>
+        )}
+        {!image_url && (
+          <div className="relative w-full h-48 flex items-center justify-center bg-muted">
+            <span className="text-muted-foreground">No image</span>
+          </div>
+        )}
+      </Link>
       
-      <CardHeader className="space-y-2">
+      <CardHeader className="space-y-2 flex-grow">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-2">{name}</CardTitle>
+          <Link href={productUrl} className="flex-1 hover:opacity-80 transition-opacity">
+            <CardTitle className="text-lg line-clamp-2 hover:underline">{name}</CardTitle>
+          </Link>
           <span className="text-lg font-bold whitespace-nowrap">
             {formatPrice(price_cts)}
           </span>
@@ -148,7 +173,7 @@ export function MenuItemCard({
       </CardHeader>
 
       <CardFooter className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex items-center gap-2 w-full flex-wrap">
           {category && (
             <Badge variant="secondary" className="text-xs">
               {category}
@@ -166,60 +191,88 @@ export function MenuItemCard({
           )}
         </div>
 
-        {quantity === 0 ? (
-          <Button
-            onClick={handleAdd}
-            disabled={isOutOfStock || isAdding}
-            className={cn(
-              "w-full",
-              isAdding && "scale-95"
-            )}
-            aria-label={`Add ${name} to cart`}
-          >
-            {isAdding ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Added
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Add to Cart
-              </>
-            )}
-          </Button>
-        ) : (
-          <div 
-            className="flex items-center justify-between w-full gap-2"
-            role="group"
-            aria-label={`Quantity controls for ${name}`}
-          >
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleDecrement}
-              aria-label={`Decrease quantity of ${name}`}
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span 
-              className="flex-1 text-center font-semibold text-lg"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {quantity}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleIncrement}
-              disabled={isOutOfStock}
-              aria-label={`Increase quantity of ${name}`}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 w-full">
+          {quantity === 0 ? (
+            <>
+              <Button
+                onClick={handleAdd}
+                disabled={isOutOfStock || isAdding}
+                className={cn(
+                  "flex-1",
+                  isAdding && "scale-95"
+                )}
+                aria-label={`Add ${name} to cart`}
+              >
+                {isAdding ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Added
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add
+                  </>
+                )}
+              </Button>
+              <Link href={productUrl} className="w-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full"
+                  aria-label={`View details for ${name}`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <div 
+                className="flex items-center justify-between flex-1 gap-1"
+                role="group"
+                aria-label={`Quantity controls for ${name}`}
+              >
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDecrement}
+                  className="h-9 w-9"
+                  aria-label={`Decrease quantity of ${name}`}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <span 
+                  className="flex-1 text-center font-semibold text-sm"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleIncrement}
+                  disabled={isOutOfStock}
+                  className="h-9 w-9"
+                  aria-label={`Increase quantity of ${name}`}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              <Link href={productUrl} className="w-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full"
+                  aria-label={`View details for ${name}`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
