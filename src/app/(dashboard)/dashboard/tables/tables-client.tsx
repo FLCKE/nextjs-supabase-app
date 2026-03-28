@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { getRestaurantsByOwner, getTablesByRestaurant } from '@/lib/actions/restaurant-management';
-import type { Restaurant, RestaurantTable as Table, Location } from '@/types';
+import type { Restaurant, RestaurantTable as Table } from '@/types';
 import { toast } from 'sonner';
 import {
   Select,
@@ -36,7 +36,6 @@ import { createClient } from '@/lib/supabase/client';
 
 export function TablesClient() {
   const [tables, setTables] = useState<Table[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -49,7 +48,6 @@ export function TablesClient() {
   useEffect(() => {
     if (restaurantId) {
       loadTables();
-      loadLocations();
       localStorage.setItem('currentTableRestaurantId', restaurantId);
     }
   }, [restaurantId]);
@@ -99,23 +97,6 @@ export function TablesClient() {
     }
   };
 
-  const loadLocations = async () => {
-    if (!restaurantId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name, restaurant_id, timezone, created_at, updated_at')
-        .eq('restaurant_id', restaurantId);
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error('Error loading locations:', error);
-      toast.error('Failed to load locations');
-    }
-  };
-
   const handleDelete = async (tableId: string) => {
     if (!confirm('Are you sure you want to delete this table?')) return;
 
@@ -143,7 +124,7 @@ export function TablesClient() {
           <h1 className="text-3xl font-bold">Tables</h1>
           <p className="text-muted-foreground">Manage restaurant tables and seating</p>
         </div>
-        {locations.length > 0 && <TableDialog locations={locations} onSuccess={loadTables} />}
+        {restaurantId && <TableDialog restaurantId={restaurantId} onSuccess={loadTables} />}
       </div>
 
       {restaurants.length > 0 && (
@@ -194,7 +175,7 @@ export function TablesClient() {
                   {tables.map((table) => (
                     <TableRow key={table.id}>
                       <TableCell className="font-medium">{table.table_number}</TableCell>
-                      <TableCell>{table.location_name || 'N/A'}</TableCell>
+                      <TableCell>{table.restaurant_name || 'N/A'}</TableCell>
                       <TableCell>
                         <div
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

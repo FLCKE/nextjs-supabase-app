@@ -10,38 +10,24 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus } from 'lucide-react';
-import { createTableForLocation } from '@/lib/actions/restaurant-management';
+import { createTable } from '@/lib/actions/restaurant-management';
 import { toast } from 'sonner';
-import type { Location } from '@/types';
 
 interface TableDialogProps {
-  locations: Location[];
+  restaurantId: string;
   onSuccess: () => void;
 }
 
-export function TableDialog({ locations, onSuccess }: TableDialogProps) {
+export function TableDialog({ restaurantId, onSuccess }: TableDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [tableLabel, setTableLabel] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!selectedLocation) {
-      toast.error('Please select a location');
-      return;
-    }
 
     if (!tableLabel.trim()) {
       toast.error('Please enter a table label');
@@ -50,19 +36,17 @@ export function TableDialog({ locations, onSuccess }: TableDialogProps) {
 
     setIsLoading(true);
     try {
-      const result = await createTableForLocation(selectedLocation, tableLabel);
+      const formData = new FormData();
+      formData.append('label', tableLabel);
+      formData.append('active', 'true');
 
-      if (result.success) {
-        toast.success('Table created successfully');
-        setTableLabel('');
-        setSelectedLocation('');
-        setOpen(false);
-        onSuccess();
-      } else {
-        toast.error(result.error || 'Failed to create table');
-      }
+      await createTable(restaurantId, formData);
+      toast.success('Table created successfully');
+      setTableLabel('');
+      setOpen(false);
+      onSuccess();
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      toast.error(error instanceof Error ? error.message : 'Failed to create table');
     } finally {
       setIsLoading(false);
     }
@@ -85,22 +69,6 @@ export function TableDialog({ locations, onSuccess }: TableDialogProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger id="location">
-                <SelectValue placeholder="Select a location" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="label">Table Label</Label>
             <Input

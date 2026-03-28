@@ -3,14 +3,12 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LocationsTab } from '@/components/restaurants/locations-tab';
+import { RestaurantInfoTab } from '@/components/restaurants/restaurant-info-tab';
 import { TablesTab } from '@/components/restaurants/tables-tab';
 import {
   getRestaurant,
-  getLocations,
   getTables,
 } from '@/lib/actions/restaurant-management';
-import type { Table } from '@/types';
 
 interface RestaurantDetailPageProps {
   params: Promise<{ id: string }>;
@@ -26,13 +24,7 @@ export default async function RestaurantDetailPage({
     notFound();
   }
 
-  const locations = await getLocations(id);
-
-  const tablesByLocation: Record<string, Table[]> = {};
-  for (const location of locations) {
-    const tables = await getTables(location.id);
-    tablesByLocation[location.id] = tables;
-  }
+  const tables = await getTables(id);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -52,22 +44,18 @@ export default async function RestaurantDetailPage({
         </p>
       </div>
 
-      <Tabs defaultValue="locations" className="space-y-4">
+      <Tabs defaultValue="info" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="locations">Locations</TabsTrigger>
+          <TabsTrigger value="info">Restaurant Info</TabsTrigger>
           <TabsTrigger value="tables">Tables</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="locations" className="space-y-4">
-          <LocationsTab restaurantId={id} locations={locations} />
+        <TabsContent value="info" className="space-y-4">
+          <RestaurantInfoTab restaurant={restaurant} />
         </TabsContent>
 
         <TabsContent value="tables" className="space-y-4">
-          <TablesTab
-            restaurantId={id}
-            locations={locations}
-            tablesByLocation={tablesByLocation}
-          />
+          <TablesTab restaurantId={id} tables={tables} />
         </TabsContent>
       </Tabs>
     </div>

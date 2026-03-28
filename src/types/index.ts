@@ -28,14 +28,8 @@ export type Restaurant = {
   legal_name: string;
   country: string;
   currency: string;
-  created_at: string;
-  updated_at: string;
-};
-
-export type Location = {
-  id: string;
-  restaurant_id: string;
-  name: string;
+  address: string | null;
+  phone: string | null;
   timezone: string;
   created_at: string;
   updated_at: string;
@@ -43,7 +37,7 @@ export type Location = {
 
 export type Table = {
   id: string;
-  location_id: string;
+  restaurant_id: string;
   label: string;
   qr_token: string;
   active: boolean;
@@ -53,11 +47,11 @@ export type Table = {
 
 export type RestaurantTable = {
   id: string;
-  location_id: string;
+  restaurant_id: string;
   table_number: string | number;
   capacity: number;
   status: 'available' | 'occupied';
-  location_name?: string;
+  restaurant_name?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -117,16 +111,11 @@ export type MenuItemWithMenu = {
   category?: string;
 };
 
-export type LocationWithTables = Location & {
-  tables: Table[];
-};
-
 export type OrderStatus = 'PENDING' | 'PAYING' | 'PAID' | 'SERVED' | 'CANCELLED' | 'REFUNDED';
 
 export type Order = {
   id: string;
-  restaurant_id: string; // Added
-  location_id: string;   // Added
+  restaurant_id: string;
   table_id: string;
   status: OrderStatus;
   currency: string;
@@ -151,14 +140,23 @@ export type OrderItem = {
 
 export type OrderWithDetails = Order & {
   table_label: string;
-  location_name: string;
   restaurant_id: string;
   restaurant_name: string;
   item_count: number;
+  location_name?: string;
 };
 
 export type OrderWithItems = Order & {
   items: OrderItem[];
   table_label?: string;
   location_name?: string;
+};
+
+export type Location = {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
 };

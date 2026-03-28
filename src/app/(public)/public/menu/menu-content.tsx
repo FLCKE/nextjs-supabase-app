@@ -16,7 +16,7 @@ interface MenuContentProps {
 }
 
 export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentProps) {
-  const { setTableToken } = useCartStore();
+  const { setTableToken , setRestaurent} = useCartStore();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
@@ -27,9 +27,10 @@ export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentP
       setTableToken(tableToken);
     } else if (restaurantId) {
       // Fall back to restaurant ID for non-QR access
-      setTableToken(restaurantId);
+      setRestaurent(restaurantId);
+      console.log("le restau id :"+ restaurantId)
     }
-  }, [tableToken, restaurantId, setTableToken]);
+  }, [tableToken, restaurantId, setTableToken,setRestaurent]);
 
   // Filter items
   const filteredItems = React.useMemo(() => {

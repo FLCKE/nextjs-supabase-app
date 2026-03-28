@@ -1,10 +1,20 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import type { Location, Table } from '@/types';
+import type { Location } from '@/types';
+
+interface LocationTableRow {
+  id: string;
+  label: string;
+  qr_token: string;
+  location_id: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface LocationWithTables {
   location: Location;
-  tables: Table[];
+  tables: LocationTableRow[];
 }
 
 export async function GET(request: NextRequest) {
@@ -63,7 +73,7 @@ export async function GET(request: NextRequest) {
 
           return {
             location: location as Location,
-            tables: (tables || []) as Table[],
+            tables: (tables || []) as LocationTableRow[],
           };
         })
       )) as LocationWithTables[];

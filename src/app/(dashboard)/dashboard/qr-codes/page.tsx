@@ -1,12 +1,12 @@
 import { QRCodeGenerator } from '@/components/qr-code/qr-code-generator';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import type { Location, Table } from '@/types';
+import type { Table } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-interface LocationWithTables {
-  location: Location;
+interface TablesData {
+  restaurant_id: string;
   tables: Table[];
 }
 
@@ -43,31 +43,12 @@ export default async function QRCodesPage({
   const params = await searchParams;
   const restaurantId = params.restaurant || restaurants[0].id;
 
-  // Get locations and tables for the selected restaurant
-  const { data: locations } = await supabase
-    .from('locations')
-    .select('id, name, restaurant_id, timezone, created_at, updated_at')
+  // Get tables for the selected restaurant
+  const { data: tables } = await supabase
+    .from('tables')
+    .select('id, label, qr_token, restaurant_id, active, created_at, updated_at')
     .eq('restaurant_id', restaurantId)
-    .order('name');
-
-  let locationsWithTables: LocationWithTables[] = [];
-
-  if (locations) {
-    locationsWithTables = (await Promise.all(
-      locations.map(async (location) => {
-        const { data: tables } = await supabase
-          .from('tables')
-          .select('id, label, qr_token, location_id, active, created_at, updated_at')
-          .eq('location_id', location.id)
-          .order('label');
-
-        return {
-          location: location as Location,
-          tables: (tables || []) as Table[],
-        };
-      })
-    )) as LocationWithTables[];
-  }
+    .order('label');
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -81,7 +62,7 @@ export default async function QRCodesPage({
       <QRCodeGenerator
         restaurants={restaurants}
         initialRestaurantId={restaurantId}
-        initialLocationsWithTables={locationsWithTables}
+        initialTables={tables || []}
       />
     </div>
   );

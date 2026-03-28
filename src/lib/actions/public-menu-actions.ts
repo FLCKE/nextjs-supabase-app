@@ -20,7 +20,6 @@ export interface PublicMenuItem {
 
 export interface PublicMenuData {
   restaurant_name: string;
-  location_name: string;
   table_label: string;
   currency: string;
   menu_items: PublicMenuItem[];
@@ -32,52 +31,39 @@ export interface PublicMenuData {
  */
 export async function getPublicMenu(tableToken: string) {
   try {
-    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
 
-    // Validate table token and get table info
-    const { data: tableInfo, error: tokenError } = await supabase
-      .rpc('validate_table_token', { p_table_token: tableToken })
-      .single();
-
-    if (tokenError || !tableInfo) {
-      return {
-        success: false,
-        error: 'Invalid or inactive table',
-      };
-    }
-
-    const { table_id, table_label, location_id, restaurant_id } = tableInfo as {
-      table_id: string;
-      table_label: string;
-      location_id: string;
-      restaurant_id: string;
-      currency: string;
-    };
-
-    // Get restaurant and location info
-    const { data: locationData, error: locationError } = await supabase
-      .from('locations')
+    // Validate table token and get table info directly
+    const { data: tableData, error: tableError } = await supabaseAdmin
+      .from('tables')
       .select(`
         id,
-        name,
+        label,
+        restaurant_id,
         restaurants!inner(
           id,
           name,
           currency
         )
       `)
-      .eq('id', location_id)
+      .eq('qr_token', tableToken)
+      .eq('active', true)
       .single();
 
-    if (locationError || !locationData) {
+    if (tableError || !tableData) {
       return {
         success: false,
-        error: 'Location not found',
+        error: 'Invalid or inactive table',
       };
     }
 
+    const table_id = tableData.id;
+    const table_label = tableData.label;
+    const restaurant_id = tableData.restaurant_id;
+    const restaurantData = (tableData.restaurants as any);
+
     // Get active menu items for this restaurant
-    const { data: menuItems, error: menuError } = await supabase
+    const { data: menuItems, error: menuError } = await supabaseAdmin
       .from('menu_items')
       .select(`
         id,
@@ -142,10 +128,9 @@ export async function getPublicMenu(tableToken: string) {
     ];
 
     const result: PublicMenuData = {
-      restaurant_name: (locationData.restaurants as any).name,
-      location_name: locationData.name,
+      restaurant_name: restaurantData.name,
       table_label,
-      currency: (locationData.restaurants as any).currency || 'USD',
+      currency: restaurantData.currency || 'USD',
       menu_items: transformedItems,
       categories,
     };
@@ -188,21 +173,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
       };
     }
 
-    // Get first location
-    const { data: locations, error: locationsError } = await supabase
-      .from('locations')
-      .select('id, name')
-      .eq('restaurant_id', restaurantId);
-
-    if (locationsError || !locations || locations.length === 0) {
-      return {
-        success: false,
-        error: 'Location not found',
-      };
-    }
-
-    const location = locations[0];
-    // console.log('Using location:', locations);
+    
 
     // Get active menu items for this restaurant
     const { data: menuItems, error: menuError } = await supabase
@@ -273,7 +244,6 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
 
     const result: PublicMenuData = {
       restaurant_name: restaurantData.name,
-      location_name: location.name,
       table_label: '', // No specific table for restaurant-level QR
       currency: restaurantData.currency || 'USD',
       menu_items: transformedItems,
@@ -288,7 +258,7 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
     console.error('Error fetching public menu by restaurant:', error);
     return {
       success: false,
-      error: 'Failed to load menu',
+      error: 'Failed to load menu ',
     };
   }
 }
@@ -299,29 +269,109 @@ export async function getPublicMenuByRestaurant(restaurantId: string) {
 export async function createPublicOrder(
   tableToken: string,
   items: Array<{ id: string; quantity: number; price_cts: number; name: string }>,
+  restaurant_id?:string,
   notes?: string
 ) {
   try {
-    const supabase = await createClient();
+    console.log('Creating order with:', { tableToken, items, restaurant_id, notes });
+
     const supabaseAdmin = createAdminClient();
 
-    // Validate table token and get table info
-    const { data: tableInfo, error: tokenError } = await supabase
-      .rpc('validate_table_token', { p_table_token: tableToken })
-      .single();
+    let table_id: string | null = null;
+    let final_restaurant_id = restaurant_id;
 
-    if (tokenError || !tableInfo) {
+    // If table token provided, look it up
+    if (tableToken && tableToken.trim()) {
+      const { data: tableData, error: tableError } = await supabaseAdmin
+        .from('tables')
+        .select(`
+          id,
+          restaurant_id
+        `)
+        .eq('qr_token', tableToken)
+        .eq('active', true)
+        .maybeSingle();
+      
+      console.log('Table lookup result:', { tableError, tableData });
+
+      if (tableError) {
+        console.error('Table lookup error:', tableError);
+        return {
+          success: false,
+          error: 'Failed to look up table token',
+        };
+      }
+
+      if (!tableData) {
+        console.warn('No table found for token:', tableToken);
+        // Continue without table - use restaurant_id if provided
+        if (!restaurant_id) {
+          return {
+            success: false,
+            error: 'Invalid table token and no restaurant ID provided',
+          };
+        }
+      } else {
+        table_id = tableData.id;
+        final_restaurant_id = restaurant_id || tableData.restaurant_id;
+      }
+    }
+
+    // Must have restaurant_id
+    if (!final_restaurant_id) {
       return {
         success: false,
-        error: 'Invalid or inactive table',
+        error: 'Restaurant ID is required',
       };
     }
 
-    const { table_id, location_id, restaurant_id } = tableInfo as {
-      table_id: string;
-      location_id: string;
-      restaurant_id: string;
-    };
+    // If no table_id found, get the first active table for this restaurant
+    if (!table_id) {
+      console.log('No table_id found, looking for default table for restaurant:', final_restaurant_id);
+      const { data: defaultTable, error: tableError } = await supabaseAdmin
+        .from('tables')
+        .select('id')
+        .eq('restaurant_id', final_restaurant_id)
+        .eq('active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (tableError) {
+        console.error('Error fetching default table:', tableError);
+        return {
+          success: false,
+          error: 'Failed to find a table for this order',
+        };
+      }
+
+      if (!defaultTable) {
+        return {
+          success: false,
+          error: 'No active tables found for this restaurant',
+        };
+      }
+
+      table_id = defaultTable.id;
+      console.log('Using default table:', table_id);
+    }
+
+    console.log('Using:', { table_id, final_restaurant_id });
+
+    // Fetch restaurant currency
+    const { data: restaurant, error: restaurantError } = await supabaseAdmin
+      .from('restaurants')
+      .select('currency')
+      .eq('id', final_restaurant_id)
+      .single();
+
+    if (restaurantError || !restaurant) {
+      return {
+        success: false,
+        error: 'Restaurant not found',
+      };
+    }
+
+    const currency = restaurant.currency || 'USD';
 
     // Calculate totals
     let totalNetCts = 0;
@@ -331,7 +381,7 @@ export async function createPublicOrder(
     const itemIds = items.map(item => item.id);
     const { data: menuItems, error: menuError } = await supabaseAdmin
       .from('menu_items')
-      .select('id, tax_rate, currency')
+      .select('id, tax_rate')
       .in('id', itemIds);
 
     if (menuError || !menuItems || menuItems.length === 0) {
@@ -340,8 +390,6 @@ export async function createPublicOrder(
         error: 'Failed to fetch item details',
       };
     }
-
-    const currency = menuItems[0].currency || 'USD';
 
     // Calculate totals with tax
     for (const item of items) {
@@ -354,7 +402,7 @@ export async function createPublicOrder(
       }
 
       const itemNetPrice = item.price_cts * item.quantity;
-      const itemTaxes = Math.round(item.price_cts * (menuItem.tax_rate / 100)) * item.quantity;
+      const itemTaxes = Math.round(item.price_cts * ((menuItem.tax_rate || 0) / 100)) * item.quantity;
       
       totalNetCts += itemNetPrice;
       taxesCts += itemTaxes;
@@ -362,44 +410,71 @@ export async function createPublicOrder(
 
     const totalGrossCts = totalNetCts + taxesCts;
 
-    // Create order using RPC
-    const { error: transactionError } = await supabaseAdmin.rpc('create_order_with_items', {
-      p_restaurant_id: restaurant_id,
-      p_location_id: location_id,
-      p_table_id: table_id,
-      p_notes: notes || null,
-      p_currency: currency,
-      p_total_net_cts: totalNetCts,
-      p_taxes_cts: taxesCts,
-      p_total_gross_cts: totalGrossCts,
-      p_changed_by: null,
-      p_order_items: items.map(item => ({
-        item_id: item.id,
-        name: item.name,
-        qty: item.quantity,
-        unit_price_cts: item.price_cts,
-        total_price_cts: item.price_cts * item.quantity
-      })),
-      p_stock_adjustments: []
-    });
+    // Create order
+    const { data: orderData, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        table_id: table_id,
+        restaurant_id: final_restaurant_id,
+        status: 'pending',
+        currency,
+        total_net_cts: totalNetCts,
+        taxes_cts: taxesCts,
+        total_gross_cts: totalGrossCts,
+        notes: notes || null,
+      })
+      .select()
+      .single();
 
-    if (transactionError) {
-      console.error('Error creating order:', transactionError);
+      console.log('Order creation result:', { orderError, orderId: orderData?.id });
+
+      if (orderError || !orderData) {
+        console.error('Error creating order:', orderError);
+        return {
+          success: false,
+          error: 'Failed to create order: ' + (orderError?.message || 'Unknown error'),
+        };
+      }
+
+    // Insert order items
+    const orderItems = items.map(item => ({
+      order_id: orderData.id,
+      item_id: item.id,
+      name: item.name,
+      qty: item.quantity,
+      unit_price_cts: item.price_cts,
+      total_price_cts: item.price_cts * item.quantity,
+    }));
+
+    const { error: itemsError } = await supabaseAdmin
+      .from('order_items')
+      .insert(orderItems);
+
+    console.log('Order items insertion result:', { itemsError });
+
+    if (itemsError) {
+      console.error('Error creating order items:', itemsError);
+      // Try to rollback the order
+      await supabaseAdmin
+        .from('orders')
+        .delete()
+        .eq('id', orderData.id);
       return {
         success: false,
-        error: 'Failed to create order',
+        error: 'Failed to add items to order',
       };
     }
 
     return {
       success: true,
       message: 'Order created successfully',
+      orderId: orderData.id,
     };
   } catch (error) {
     console.error('Error in createPublicOrder:', error);
     return {
       success: false,
-      error: 'An unexpected error occurred',
+      error: 'An unexpected error occurred: ' + (error instanceof Error ? error.message : String(error)),
     };
   }
 }

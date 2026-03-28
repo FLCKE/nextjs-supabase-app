@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Location, Table, MenuItemWithStock } from '@/types'; // Import MenuItemWithStock
+import type { Table, MenuItemWithStock } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -19,23 +19,16 @@ import {
 import { Label } from '@/components/ui/label';
 
 interface PosClientProps {
-  initialLocationsWithTables: (Location & { tables: Table[] })[];
+  tables: Table[];
   restaurantId: string;
   restaurantName: string;
-  menuItems: MenuItemWithStock[]; // Added menuItems prop
+  menuItems: MenuItemWithStock[];
 }
 
-export function PosClient({ initialLocationsWithTables, restaurantId, restaurantName, menuItems }: PosClientProps) {
+export function PosClient({ tables, restaurantId, restaurantName, menuItems }: PosClientProps) {
   const [selectedTableId, setSelectedTableId] = useState<string | undefined>(undefined);
 
-  const allTables = initialLocationsWithTables.flatMap(location =>
-    location.tables.map(table => ({
-      ...table,
-      locationName: location.name,
-    }))
-  );
-
-  const selectedTable = allTables.find(table => table.id === selectedTableId);
+  const selectedTable = tables.find(table => table.id === selectedTableId);
 
   // Helper to format currency
   const formatCurrency = (amountCts: number, currency: string) => {
@@ -69,15 +62,10 @@ export function PosClient({ initialLocationsWithTables, restaurantId, restaurant
                 <SelectValue placeholder="Choose a table" />
               </SelectTrigger>
               <SelectContent>
-                {initialLocationsWithTables.map(location => (
-                  <div key={location.id}>
-                    <p className="px-2 py-1 text-sm font-semibold text-muted-foreground">{location.name}</p>
-                    {location.tables.map(table => (
-                      <SelectItem key={table.id} value={table.id}>
-                        {table.label}
-                      </SelectItem>
-                    ))}
-                  </div>
+                {tables.map(table => (
+                  <SelectItem key={table.id} value={table.id}>
+                    {table.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -85,7 +73,6 @@ export function PosClient({ initialLocationsWithTables, restaurantId, restaurant
             {selectedTable && (
               <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
                 <p className="text-lg font-semibold">Selected Table: {selectedTable.label}</p>
-                <p className="text-sm text-muted-foreground">Location: {selectedTable.locationName}</p>
               </div>
             )}
 

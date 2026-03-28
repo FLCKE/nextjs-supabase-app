@@ -1,8 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { restaurantSchema, locationSchema, tableSchema } from '@/lib/validation/restaurant';
-import type { Restaurant, Location, Table } from '@/types';
+import { restaurantSchema, tableSchema } from '@/lib/validation/restaurant';
+import type { Restaurant, Table } from '@/types';
 import { revalidatePath } from 'next/cache';
 
 // Restaurant CRUD
@@ -107,6 +107,9 @@ export async function createRestaurant(formData: FormData) {
     legal_name: formData.get('legal_name'),
     country: formData.get('country'),
     currency: formData.get('currency'),
+    address: formData.get('address') || '',
+    phone: formData.get('phone') || '',
+    timezone: formData.get('timezone') || 'UTC',
   };
 
   const validatedData = restaurantSchema.parse(rawData);
@@ -134,6 +137,9 @@ export async function updateRestaurant(id: string, formData: FormData) {
     legal_name: formData.get('legal_name'),
     country: formData.get('country'),
     currency: formData.get('currency'),
+    address: formData.get('address') || '',
+    phone: formData.get('phone') || '',
+    timezone: formData.get('timezone') || 'UTC',
   };
 
   const validatedData = restaurantSchema.parse(rawData);
@@ -165,99 +171,14 @@ export async function deleteRestaurant(id: string) {
   revalidatePath('/dashboard/restaurants');
 }
 
-// Location CRUD
-export async function getLocations(restaurantId: string): Promise<Location[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('locations')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function getLocation(id: string): Promise<Location | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('locations')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function createLocation(restaurantId: string, formData: FormData) {
-  const supabase = await createClient();
-
-  const rawData = {
-    name: formData.get('name'),
-    timezone: formData.get('timezone'),
-  };
-
-  const validatedData = locationSchema.parse(rawData);
-
-  const { data, error } = await supabase
-    .from('locations')
-    .insert({
-      ...validatedData,
-      restaurant_id: restaurantId,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  
-  revalidatePath(`/dashboard/restaurants/${restaurantId}`);
-  return data;
-}
-
-export async function updateLocation(id: string, restaurantId: string, formData: FormData) {
-  const supabase = await createClient();
-
-  const rawData = {
-    name: formData.get('name'),
-    timezone: formData.get('timezone'),
-  };
-
-  const validatedData = locationSchema.parse(rawData);
-
-  const { data, error } = await supabase
-    .from('locations')
-    .update(validatedData)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  
-  revalidatePath(`/dashboard/restaurants/${restaurantId}`);
-  return data;
-}
-
-export async function deleteLocation(id: string, restaurantId: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from('locations')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-  
-  revalidatePath(`/dashboard/restaurants/${restaurantId}`);
-}
 
 // Table CRUD
-export async function getTables(locationId: string): Promise<Table[]> {
+export async function getTables(restaurantId: string): Promise<Table[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('tables')
     .select('*')
-    .eq('location_id', locationId)
+    .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -276,7 +197,7 @@ export async function getTable(id: string): Promise<Table | null> {
   return data;
 }
 
-export async function createTable(locationId: string, restaurantId: string, formData: FormData) {
+export async function createTable(restaurantId: string, formData: FormData) {
   const supabase = await createClient();
 
   const rawData = {
@@ -290,7 +211,7 @@ export async function createTable(locationId: string, restaurantId: string, form
     .from('tables')
     .insert({
       ...validatedData,
-      location_id: locationId,
+      restaurant_id: restaurantId,
     })
     .select()
     .single();
@@ -360,33 +281,10 @@ export async function getTablesByRestaurant(restaurantId: string) {
   try {
     const supabase = await createClient();
 
-    // First get all location IDs for this restaurant
-    const { data: locations, error: locError } = await supabase
-      .from('locations')
-      .select('id')
-      .eq('restaurant_id', restaurantId);
-
-    if (locError) throw locError;
-
-    const locationIds = (locations || []).map((loc) => loc.id);
-
-    if (locationIds.length === 0) {
-      return { success: true, data: [], error: null };
-    }
-
-    // Then get tables for these locations
     const { data, error } = await supabase
       .from('tables')
-      .select(
-        `
-        id,
-        label,
-        active,
-        location_id,
-        locations(name)
-      `
-      )
-      .in('location_id', locationIds);
+      .select('id, label, active, restaurant_id')
+      .eq('restaurant_id', restaurantId);
 
     if (error) throw error;
 
@@ -395,8 +293,7 @@ export async function getTablesByRestaurant(restaurantId: string) {
       table_number: table.label,
       capacity: 0,
       status: table.active ? 'available' : 'occupied',
-      location_id: table.location_id,
-      location_name: table.locations?.name || 'Unknown',
+      restaurant_id: table.restaurant_id,
     }));
 
     return { success: true, data: formattedTables, error: null };

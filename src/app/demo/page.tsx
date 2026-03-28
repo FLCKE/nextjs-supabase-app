@@ -9,32 +9,32 @@ export default function Demo() {
     {
       title: 'Dashboard Principal',
       description: 'Vue d\'ensemble de votre activité avec statistiques en temps réel',
-      video: 'https://via.placeholder.com/400x300?text=Dashboard'
+      link: '/demo/dashboard',
+      icon: '📊'
     },
     {
       title: 'Gestion des Commandes',
       description: 'Recevez, validez et préparez les commandes facilement',
-      video: 'https://via.placeholder.com/400x300?text=Orders'
+      link: '/demo/orders',
+      icon: '🍽️'
     },
     {
       title: 'Gestion des Menus',
       description: 'Créez et modifiez vos menus en quelques clics',
-      video: 'https://via.placeholder.com/400x300?text=Menus'
+      link: '/demo/menus',
+      icon: '📋'
     },
     {
-      title: 'Gestion Inventaire',
-      description: 'Contrôlez vos stocks et évitez les ruptures',
-      video: 'https://via.placeholder.com/400x300?text=Inventory'
+      title: 'Analytics & Statistiques',
+      description: 'Analysez vos ventes et comportements clients',
+      link: '/demo/analytics',
+      icon: '📈'
     },
     {
       title: 'QR Codes Tables',
       description: 'Générez des QR codes pour vos tables',
-      video: 'https://via.placeholder.com/400x300?text=QR+Codes'
-    },
-    {
-      title: 'Analytics',
-      description: 'Analysez vos ventes et comportements clients',
-      video: 'https://via.placeholder.com/400x300?text=Analytics'
+      link: '/demo/qr',
+      icon: '🔲'
     },
   ];
 
@@ -76,30 +76,30 @@ export default function Demo() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <motion.div
+              <Link
+                href={feature.link}
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10 }}
-                className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all"
               >
-                <div className="relative h-48 bg-gradient-to-br from-orange-200 to-red-200 flex items-center justify-center group cursor-pointer">
-                  <img 
-                    src={feature.video} 
-                    alt={feature.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                    <Play className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -10 }}
+                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer h-full"
+                >
+                  <div className="relative h-48 bg-gradient-to-br from-orange-200 to-red-200 flex items-center justify-center group">
+                    <span className="text-6xl">{feature.icon}</span>
                   </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-              </motion.div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                    <p className="text-gray-600 mb-4">{feature.description}</p>
+                    <div className="text-orange-600 font-semibold flex items-center gap-2">
+                      Découvrir →
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>

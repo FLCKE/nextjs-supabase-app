@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { restaurants } from '../data';
 
 export interface CartItem {
   id: string;
@@ -15,6 +16,7 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   tableToken: string | null;
+  restaurent: string | null;
   
   // Actions
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
@@ -23,7 +25,7 @@ interface CartStore {
   updateNotes: (itemId: string, notes: string) => void;
   clearCart: () => void;
   setTableToken: (token: string) => void;
-  
+  setRestaurent:(id: string) =>void;
   // Computed values
   getItemCount: () => number;
   getSubtotal: () => number;
@@ -36,6 +38,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       tableToken: null,
+      restaurent: null,
 
       addItem: (item) => {
         const items = get().items;
@@ -89,6 +92,9 @@ export const useCartStore = create<CartStore>()(
 
       setTableToken: (token) => {
         set({ tableToken: token });
+      },
+      setRestaurent: (id) => {
+        set({ restaurent: id });
       },
 
       getItemCount: () => {

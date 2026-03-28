@@ -12,7 +12,7 @@ export default async function QRRedirectPage({ params }: QRRedirectPageProps) {
   // Get the table by QR token
   const { data: table, error } = await supabase
     .from('tables')
-    .select('id, location_id, label, locations(name, restaurant_id)')
+    .select('id, restaurant_id, label')
     .eq('qr_token', token)
     .single();
 
@@ -20,8 +20,7 @@ export default async function QRRedirectPage({ params }: QRRedirectPageProps) {
     return redirect('/');
   }
 
-  const location = table.locations as any;
-  const restaurantId = location?.restaurant_id;
+  const restaurantId = table.restaurant_id;
 
   if (!restaurantId) {
     return redirect('/');

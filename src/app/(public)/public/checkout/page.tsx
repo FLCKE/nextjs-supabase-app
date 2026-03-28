@@ -9,8 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useCartStore } from '@/lib/cart/cart-store';
 import { createPublicOrder } from '@/lib/actions/public-menu-actions';
+import { MonerooPaymentButton } from '@/components/payments/MonerooPaymentButton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { restaurants } from '@/lib/data';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function CheckoutPage() {
   const {
     items,
     tableToken,
+    restaurent,
     setTableToken,
     updateQuantity,
     removeItem,
@@ -32,6 +35,10 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [isOffline, setIsOffline] = React.useState(false);
+  const [customerName, setCustomerName] = React.useState('');
+  const [customerPhone, setCustomerPhone] = React.useState('');
+  const [orderTotal, setOrderTotal] = React.useState(0);
+
 
   // Restore table token from URL if not in store
   React.useEffect(() => {
@@ -116,13 +123,13 @@ export default function CheckoutPage() {
   };
 
   const handleConfirmOrder = async () => {
-    const currentToken = tableToken || searchParams.get('table_token');
+    const restaurantId = restaurent;
+    const currentToken = tableToken;
     
-    if (!currentToken) {
+    if (!currentToken && !restaurantId) {
       toast.error('Invalid session', {
         description: 'Please scan the QR code again to start a new order',
       });
-      // Redirect to menu to restart
       setTimeout(() => router.push('/public/menu'), 2000);
       return;
     }
@@ -150,17 +157,19 @@ export default function CheckoutPage() {
         .join('\n');
 
       const result = await createPublicOrder(
-        currentToken,
+        currentToken || '',
         orderItems,
+        restaurantId || undefined,
         generalNotes || undefined
       );
 
       if (result.success) {
-        setOrderId('success');
+        setOrderId(result.orderId || 'success');
+        setOrderTotal(total);
         toast.success('Order placed successfully!', {
           description: 'Your order has been sent to the kitchen',
         });
-        clearCart();
+        // DON'T clear cart yet - need it for payment info
       } else {
         toast.error('Failed to place order', {
           description: result.error || 'Please try again',
@@ -176,14 +185,18 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePayNow = () => {
-    // TODO: Integrate with payment provider (Stripe)
-    toast.info('Payment integration coming soon', {
-      description: 'Please pay at the counter',
+  const handlePaymentSuccess = (transactionId: string) => {
+    toast.success('Payment successful!', {
+      description: `Transaction ID: ${transactionId}`,
     });
-    
     clearCart();
     router.push('/public/menu');
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast.error('Payment failed', {
+      description: error,
+    });
   };
 
   // Order confirmation screen
@@ -209,9 +222,49 @@ export default function CheckoutPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            <Button onClick={handlePayNow} className="w-full" size="lg">
-              Pay Now ({formatPrice(total)})
-            </Button>
+            <div className="w-full space-y-3">
+              <div>
+                <Label htmlFor="payment-name" className="text-xs">Name *</Label>
+                <input
+                  id="payment-name"
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full px-3 py-2 border rounded-md text-sm mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Entered: "{customerName}" (length: {customerName.length})
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="payment-phone" className="text-xs">Phone *</Label>
+                <input
+                  id="payment-phone"
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Your phone number"
+                  className="w-full px-3 py-2 border rounded-md text-sm mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Entered: "{customerPhone}" (length: {customerPhone.length})
+                </p>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded">
+              Debug: Name="{customerName}", Phone="{customerPhone}", Total={total}
+            </div>
+            <MonerooPaymentButton
+              amount={orderTotal}
+              orderId={orderId}
+              customerEmail={customerName.trim() ? `${customerName.replace(/\s+/g, '').toLowerCase()}@restaurant.com` : 'customer@restaurant.com'}
+              customerPhone={customerPhone}
+              customerFirstName={customerName}
+              customerLastName={customerName.split(' ').slice(1).join(' ')}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+            />
             <Button
               variant="ghost"
               onClick={() => {

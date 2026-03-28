@@ -3,17 +3,17 @@
 import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { createOrderSchema, type CreateOrderPayload } from '@/lib/validation/pos';
-import { getLocations, getTables } from './restaurant-management';
-import type { MenuItemWithMenu, LocationWithTables } from '@/types';
+import { getTables } from './restaurant-management';
+import type { MenuItemWithMenu } from '@/types';
 
 /**
  * Fetches all the necessary initial data for the POS interface for a given restaurant.
  * @param restaurantId - The ID of the restaurant.
- * @returns An object containing active menus with their items, and locations with their tables.
+ * @returns An object containing active menus with their items, and tables.
  */
 export async function getPosData(restaurantId: string): Promise<{
   menus: MenuItemWithMenu[],
-  locationsWithTables: LocationWithTables[]
+  tables: any[]
 }> {
   const supabase = await createClient();
 
@@ -51,16 +51,10 @@ export async function getPosData(restaurantId: string): Promise<{
     }))
   );
   
-  // 2. Fetch locations and their tables
-  const locations = await getLocations(restaurantId);
-  const locationsWithTables = await Promise.all(
-    locations.map(async (location) => {
-      const tables = await getTables(location.id);
-      return { ...location, tables };
-    })
-  );
+  // 2. Fetch tables for this restaurant
+  const tables = await getTables(restaurantId);
 
-  return { menus: menuItems, locationsWithTables };
+  return { menus: menuItems, tables };
 }
 
 /**
@@ -93,7 +87,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<{ succes
       { data: tableDetails, error: tableError }
     ] = await Promise.all([
       supabaseAdmin.from('menu_items').select('*').in('id', itemIds),
-      supabaseAdmin.from('tables').select('id, location_id').eq('id', tableId).single()
+      supabaseAdmin.from('tables').select('id, restaurant_id').eq('id', tableId).single()
     ]);
     
     if (itemError || !itemDetails || itemDetails.length !== itemIds.length) {
@@ -102,16 +96,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<{ succes
     if (tableError || !tableDetails) {
       throw new Error('Table not found.');
     }
-    const locationId = tableDetails.location_id;
-
-    // Get restaurant_id from the first item (assuming all items are from the same restaurant)
-    const { data: menu, error: menuError } = await supabaseAdmin
-        .from('menus')
-        .select('restaurant_id')
-        .eq('id', itemDetails[0].menu_id)
-        .single();
-    if(menuError || !menu) throw new Error('Could not determine restaurant for the order.');
-    const restaurantId = menu.restaurant_id;
+    const restaurantId = tableDetails.restaurant_id;
 
     // Step 3: Verify stock and calculate totals
     let totalNetCts = 0;
@@ -145,7 +130,6 @@ export async function createOrder(payload: CreateOrderPayload): Promise<{ succes
     // Step 4: Perform the transaction
     const { error: transactionError } = await supabaseAdmin.rpc('create_order_with_items', {
       p_restaurant_id: restaurantId,
-      p_location_id: locationId,
       p_table_id: tableId,
       p_notes: notes,
       p_currency: currency,

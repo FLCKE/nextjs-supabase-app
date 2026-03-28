@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getLocations, getTables, getRestaurant } from '@/lib/actions/restaurant-management';
-import { getMenuItemsWithStock } from '@/lib/actions/inventory'; // Import getMenuItemsWithStock
+import { getTables, getRestaurant } from '@/lib/actions/restaurant-management';
+import { getMenuItemsWithStock } from '@/lib/actions/inventory';
 import { PosClient } from './pos-client';
-import type { Location, Table, MenuItemWithStock } from '@/types'; // Add MenuItemWithStock to types
+import type { Table, MenuItemWithStock } from '@/types';
 
 export default async function PosPage() {
   const supabase = await createClient();
@@ -20,7 +20,7 @@ export default async function PosPage() {
     .single();
 
   if (!profile || profile.role !== 'staff' || !profile.restaurant_id) {
-    return redirect('/dashboard'); // Redirect if not staff or no restaurant_id
+    return redirect('/dashboard');
   }
 
   const staffRestaurantId = profile.restaurant_id;
@@ -28,32 +28,23 @@ export default async function PosPage() {
   // Fetch restaurant details for the name
   const restaurant = await getRestaurant(staffRestaurantId);
   if (!restaurant) {
-    // This should ideally not happen if profile.restaurant_id is valid
     console.error(`Restaurant not found for ID: ${staffRestaurantId}`);
     return redirect('/dashboard');
   }
   const restaurantName = restaurant.name;
 
-  // --- Fetch locations and tables ---
-  const locations = await getLocations(staffRestaurantId);
-  const locationsWithTables: (Location & { tables: Table[] })[] = await Promise.all(
-    locations.map(async (location) => {
-      const tables = await getTables(location.id);
-      return { ...location, tables };
-    })
-  );
-  // --- End fetch ---
+  // Fetch tables for the restaurant
+  const tables = await getTables(staffRestaurantId);
 
-  // --- Fetch menu items ---
+  // Fetch menu items
   const menuItems: MenuItemWithStock[] = await getMenuItemsWithStock(staffRestaurantId);
-  // --- End fetch ---
 
   return (
     <PosClient 
       restaurantId={staffRestaurantId} 
       restaurantName={restaurantName} 
-      initialLocationsWithTables={locationsWithTables} 
-      menuItems={menuItems} // Pass menuItems to PosClient
+      tables={tables}
+      menuItems={menuItems}
     />
   );
 }

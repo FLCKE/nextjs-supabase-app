@@ -17,8 +17,7 @@ const CreateOrderItemInputSchema = z.object({
 // Zod schema for creating an order
 const CreateOrderInputSchema = z.object({
   table_id: z.string().uuid(),
-  restaurant_id: z.string().uuid(), // Now directly part of order
-  location_id: z.string().uuid(),   // Now directly part of order
+  restaurant_id: z.string().uuid(),
   items: z.array(CreateOrderItemInputSchema).min(1, 'Order must contain at least one item.'),
   notes: z.string().optional().nullable(),
 });
@@ -45,7 +44,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ success: b
   if (!validatedFields.success) {
     return { success: false, error: `Validation failed: ${validatedFields.error.message}` };
   }
-  const { table_id, restaurant_id, location_id, items, notes } = validatedFields.data;
+  const { table_id, restaurant_id, items, notes } = validatedFields.data;
 
   // Verify staff member is associated with the restaurant and location
   // This check might be redundant if RLS is set up perfectly, but good for explicit server-side check.
@@ -109,7 +108,6 @@ export async function createOrder(input: CreateOrderInput): Promise<{ success: b
       .insert({
         table_id,
         restaurant_id,
-        location_id,
         status: 'PENDING' as OrderStatus,
         currency,
         total_net_cts,

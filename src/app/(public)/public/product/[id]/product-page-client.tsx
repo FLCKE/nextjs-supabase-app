@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/cart/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { normalizePriceToCents } from '@/lib/utils/price-utils';
 
 interface ProductPageClientProps {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ export function ProductPageClient({
 }: ProductPageClientProps) {
   const { items, addItem, updateQuantity } = useCartStore();
   const [isAdding, setIsAdding] = React.useState(false);
+  const normalizedPrice = normalizePriceToCents(price);
 
   const cartItem = items.find((item) => item.id === productId);
   const quantity = cartItem?.quantity || 0;
@@ -41,7 +43,7 @@ export function ProductPageClient({
     addItem({
       id: productId,
       name: productName,
-      price_cts: price,
+      price_cts: normalizedPrice,
       tax_rate: 0,
     });
 

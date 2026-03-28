@@ -9,14 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Loader, AlertCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Location, Table, MenuItemWithStock } from '@/types';
+import type { Table, MenuItemWithStock } from '@/types';
 import OrderBoard from './components/order-board';
 import PosPanel from './components/pos-panel';
 
 interface StaffPosClientProps {
   restaurantId: string;
   restaurantName: string;
-  initialLocationsWithTables: (Location & { tables: Table[] })[];
+  tables: Table[];
   menuItems: MenuItemWithStock[];
 }
 
@@ -35,7 +35,7 @@ interface Order {
 export default function StaffPosClient({
   restaurantId,
   restaurantName,
-  initialLocationsWithTables,
+  tables,
   menuItems,
 }: StaffPosClientProps) {
   const router = useRouter();
@@ -95,14 +95,12 @@ export default function StaffPosClient({
 
       if (error) throw error;
       const ordersData = (data || []).map((order: any) => {
-        const table = initialLocationsWithTables
-          .flatMap(l => l.tables)
-          .find(t => t.id === order.table_id);
-          return {
-            ...order,
-            table_label: table?.label || 'Unknown',
-          };
-        });
+        const table = tables.find(t => t.id === order.table_id);
+        return {
+          ...order,
+          table_label: table?.label || 'Unknown',
+        };
+      });
         
       setOrders(ordersData);
       setPendingCount(ordersData.filter((o: Order) => o.status === 'pending').length);
@@ -110,7 +108,7 @@ export default function StaffPosClient({
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
     }
-  }, [restaurantId, supabase, initialLocationsWithTables]);
+  }, [restaurantId, supabase, tables]);
 
   // Initial load and subscribe to changes
   useEffect(() => {
@@ -201,7 +199,7 @@ export default function StaffPosClient({
           <PosPanel
             selectedTable={selectedTable}
             onTableSelect={setSelectedTable}
-            locationsWithTables={initialLocationsWithTables}
+            tables={tables}
             menuItems={menuItems}
             onOrderCreated={fetchOrders}
             restaurantId={restaurantId}

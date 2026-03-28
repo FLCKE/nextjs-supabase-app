@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, Trash2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
-import type { Location, Table, MenuItemWithStock } from '@/types';
+import type { Table, MenuItemWithStock } from '@/types';
 
 interface CartItem {
   itemId: string;
@@ -31,7 +31,7 @@ interface CartItem {
 interface PosPanelProps {
   selectedTable: string | null;
   onTableSelect: (tableId: string) => void;
-  locationsWithTables: (Location & { tables: Table[] })[];
+  tables: Table[];
   menuItems: MenuItemWithStock[];
   onOrderCreated: () => void;
   restaurantId: string;
@@ -40,7 +40,7 @@ interface PosPanelProps {
 export default function PosPanel({
   selectedTable,
   onTableSelect,
-  locationsWithTables,
+  tables,
   menuItems,
   onOrderCreated,
   restaurantId,
@@ -58,15 +58,6 @@ export default function PosPanel({
       (item.stock_mode === 'INFINITE' || (item.stock_qty && item.stock_qty > 0))
     );
   }, [menuItems, searchQuery]);
-
-  const allTables = useMemo(() => {
-    return locationsWithTables.flatMap(location =>
-      location.tables.map(table => ({
-        ...table,
-        locationName: location.name,
-      }))
-    );
-  }, [locationsWithTables]);
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price_cts * item.quantity), 0);
   const taxes = cart.reduce((sum, item) => {
@@ -126,7 +117,6 @@ export default function PosPanel({
       const {data, error } = await supabase.from('orders').insert({
         restaurant_id: restaurantId,
         table_id: selectedTable,
-        location_id: locationsWithTables[0]?.id, // Get from first location
         status: 'pending',
         currency: 'USD',
         total_net_cts: subtotal,
@@ -181,17 +171,10 @@ export default function PosPanel({
               <SelectValue placeholder="Choose a table" />
             </SelectTrigger>
             <SelectContent>
-              {locationsWithTables.map(location => (
-                <div key={location.id}>
-                  <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                    {location.name}
-                  </p>
-                  {location.tables.map(table => (
-                    <SelectItem key={table.id} value={table.id}>
-                      {table.label}
-                    </SelectItem>
-                  ))}
-                </div>
+              {tables.map(table => (
+                <SelectItem key={table.id} value={table.id}>
+                  {table.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -30,32 +30,28 @@ import { QRCodeDisplay } from '@/components/restaurants/qr-code-display';
 import { deleteTable, regenerateQRToken } from '@/lib/actions/restaurant-management';
 import { useRole } from '@/hooks/useRole';
 import { toast } from 'sonner';
-import type { Table as TableType, Location } from '@/types';
+import type { Table as TableType } from '@/types';
 
 interface TablesTabProps {
   restaurantId: string;
-  locations: Location[];
-  tablesByLocation: Record<string, TableType[]>;
+  tables: TableType[];
 }
 
-export function TablesTab({ restaurantId, locations, tablesByLocation }: TablesTabProps) {
+export function TablesTab({ restaurantId, tables }: TablesTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [qrTable, setQrTable] = useState<TableType | null>(null);
   const { isReadOnly } = useRole();
   const router = useRouter();
 
   const handleEdit = (table: TableType) => {
     setSelectedTable(table);
-    setSelectedLocation(table.location_id);
     setDialogOpen(true);
   };
 
-  const handleCreate = (locationId: string) => {
+  const handleCreate = () => {
     setSelectedTable(null);
-    setSelectedLocation(locationId);
     setDialogOpen(true);
   };
 
@@ -88,135 +84,107 @@ export function TablesTab({ restaurantId, locations, tablesByLocation }: TablesT
     setQrDialogOpen(true);
   };
 
-  const handleDownloadQR = (table: TableType) => {
-    const canvas = document.querySelector(`canvas[data-qr="${table.qr_token}"]`) as HTMLCanvasElement;
-    if (!canvas) return;
-
-    const url = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.download = `table-${table.label}-qr.png`;
-    link.href = url;
-    link.click();
-  };
-
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedTable(null);
-    setSelectedLocation('');
   };
 
   const handleSuccess = () => {
     router.refresh();
   };
 
-  if (locations.length === 0) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        Please create a location first before adding tables.
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {locations.map((location) => {
-        const tables = tablesByLocation[location.id] || [];
-        return (
-          <div key={location.id} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">{location.name}</h3>
-                <p className="text-sm text-muted-foreground">{tables.length} tables</p>
-              </div>
-              {!isReadOnly && (
-                <Button onClick={() => handleCreate(location.id)} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Table
-                </Button>
-              )}
-            </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Tables</h3>
+          <p className="text-sm text-muted-foreground">{tables.length} tables</p>
+        </div>
+        {!isReadOnly && (
+          <Button onClick={handleCreate} size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Table
+          </Button>
+        )}
+      </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Label</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>QR Token</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tables.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        No tables found for this location.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    tables.map((table) => (
-                      <TableRow key={table.id}>
-                        <TableCell className="font-medium">{table.label}</TableCell>
-                        <TableCell>
-                          <Badge variant={table.active ? 'default' : 'secondary'}>
-                            {table.active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">
-                            {table.qr_token.slice(0, 8)}...
-                          </code>
-                        </TableCell>
-                        <TableCell>{new Date(table.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewQR(table)}>
-                                <Download className="mr-2 h-4 w-4" />
-                                View QR Code
-                              </DropdownMenuItem>
-                              {!isReadOnly && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleEdit(table)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleRegenerateQR(table.id)}>
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    Regenerate QR
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(table.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        );
-      })}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Label</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>QR Token</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tables.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No tables found. Create your first table to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              tables.map((table) => (
+                <TableRow key={table.id}>
+                  <TableCell className="font-medium">{table.label}</TableCell>
+                  <TableCell>
+                    <Badge variant={table.active ? 'default' : 'secondary'}>
+                      {table.active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <code className="text-xs bg-muted px-2 py-1 rounded">
+                      {table.qr_token.slice(0, 8)}...
+                    </code>
+                  </TableCell>
+                  <TableCell>{new Date(table.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewQR(table)}>
+                          <Download className="mr-2 h-4 w-4" />
+                          View QR Code
+                        </DropdownMenuItem>
+                        {!isReadOnly && (
+                          <>
+                            <DropdownMenuItem onClick={() => handleEdit(table)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRegenerateQR(table.id)}>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Regenerate QR
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(table.id)}
+                              className="text-red-600"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <TableDialog
         open={dialogOpen}
         onOpenChange={handleDialogClose}
-        locationId={selectedLocation}
         restaurantId={restaurantId}
         table={selectedTable}
         onSuccess={handleSuccess}

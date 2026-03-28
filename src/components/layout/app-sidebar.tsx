@@ -87,11 +87,6 @@ const navGroups: NavGroup[] = [
         icon: CreditCard,
       },
       {
-        title: 'Inventory',
-        href: '/dashboard/inventory',
-        icon: Package,
-      },
-      {
         title: 'Staff',
         href: '/dashboard/staff',
         icon: Users,

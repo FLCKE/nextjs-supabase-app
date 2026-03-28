@@ -50,12 +50,14 @@ export function RestaurantDialog({
           legal_name: restaurant.legal_name,
           country: restaurant.country,
           currency: restaurant.currency,
+          timezone: restaurant.timezone,
         }
       : {
           name: '',
           legal_name: '',
           country: '',
           currency: 'USD',
+          timezone: 'UTC',
         },
   });
 
@@ -64,7 +66,9 @@ export function RestaurantDialog({
       try {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
-          formData.append(key, value);
+          if (value !== null && value !== undefined) {
+            formData.append(key, String(value));
+          }
         });
 
         if (isEditing && restaurant) {

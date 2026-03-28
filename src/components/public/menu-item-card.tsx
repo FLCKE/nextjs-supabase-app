@@ -11,6 +11,7 @@ import { useCartStore } from '@/lib/cart/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
+import { normalizePriceToCents, formatPrice as formatPriceUtil } from '@/lib/utils/price-utils';
 
 interface MenuItemCardProps {
   id: string;
@@ -43,12 +44,13 @@ export function MenuItemCard({
   
   const cartItem = items.find((item) => item.id === id);
   const quantity = cartItem?.quantity || 0;
+  const normalizedPriceCts = normalizePriceToCents(price_cts);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
-    }).format(cents / 100);
+    }).format(normalizePriceToCents(cents) / 100);
   };
 
   const isLowStock = stock_mode === 'FINITE' && stock_qty !== null && stock_qty <= 5;
@@ -70,7 +72,7 @@ export function MenuItemCard({
     addItem({
       id,
       name,
-      price_cts,
+      price_cts: normalizedPriceCts,
       tax_rate,
     });
 
@@ -161,7 +163,7 @@ export function MenuItemCard({
             <CardTitle className="text-lg line-clamp-2 hover:underline">{name}</CardTitle>
           </Link>
           <span className="text-lg font-bold whitespace-nowrap">
-            {formatPrice(price_cts)}
+            {formatPrice(normalizedPriceCts)}
           </span>
         </div>
         

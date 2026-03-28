@@ -28,10 +28,8 @@ export function useOrdersRealtime(restaurantId?: string) {
             created_at,
             updated_at,
             restaurant_id,
-            location_id,
             table_id,
             tables!inner(label),
-            locations!inner(name),
             order_items(id)
           `)
           .order('created_at', { ascending: false });
@@ -49,7 +47,6 @@ export function useOrdersRealtime(restaurantId?: string) {
           const formattedOrders = (data || []).map((order: any) => ({
             ...order,
             table_label: order.tables?.label || 'Unknown',
-            location_name: order.locations?.name || 'Unknown',
             item_count: order.order_items?.length || 0,
           })) as OrderWithDetails[];
           setOrders(formattedOrders);
@@ -92,10 +89,8 @@ export function useOrdersRealtime(restaurantId?: string) {
                 created_at,
                 updated_at,
                 restaurant_id,
-                location_id,
                 table_id,
                 tables!inner(label),
-                locations!inner(name),
                 order_items(id)
               `)
               .eq('id', payload.new.id)
@@ -106,8 +101,8 @@ export function useOrdersRealtime(restaurantId?: string) {
               if (!restaurantId || newOrder.restaurant_id === restaurantId) {
                 const formatted = {
                   ...newOrder,
-                  table_label: newOrder.tables?.label || 'Unknown',
-                  location_name: newOrder.locations?.name || 'Unknown',
+                  table_label: (newOrder.tables as any)?.[0]?.label || 'Unknown',
+                  restaurant_name: 'Restaurant',
                   item_count: newOrder.order_items?.length || 0,
                 } as OrderWithDetails;
                 setOrders((prev) => [formatted, ...prev]);

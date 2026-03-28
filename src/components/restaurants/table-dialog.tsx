@@ -24,7 +24,6 @@ type TableFormData = z.infer<typeof tableSchema>;
 interface TableDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  locationId: string;
   restaurantId: string;
   table?: Table | null;
   onSuccess?: () => void;
@@ -33,7 +32,6 @@ interface TableDialogProps {
 export function TableDialog({
   open,
   onOpenChange,
-  locationId,
   restaurantId,
   table,
   onSuccess,
@@ -70,7 +68,7 @@ export function TableDialog({
           await updateTable(table.id, restaurantId, formData);
           toast.success('Table updated successfully');
         } else {
-          await createTable(locationId, restaurantId, formData);
+          await createTable(restaurantId, formData);
           toast.success('Table created successfully');
         }
 

@@ -87,11 +87,8 @@ export default async function PublicMenuPage({ searchParams }: PublicMenuPagePro
               <div className="flex-1">
                 <h1 className="text-xl font-bold">{data.restaurant_name}</h1>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span>{data.location_name}</span>
                   {data.table_label && (
                     <>
-                      <span>•</span>
                       <span>Table {data.table_label}</span>
                     </>
                   )}
@@ -116,11 +113,13 @@ export default async function PublicMenuPage({ searchParams }: PublicMenuPagePro
 
         {/* Main Content */}
         <Suspense fallback={<MenuSkeleton />}>
-          <MenuContent
-            menuData={data}
-            tableToken={tableToken ? tableToken : ''}
-            restaurantId={restaurantIdParam}
-          />
+          <div suppressHydrationWarning>
+            <MenuContent
+              menuData={data}
+              tableToken={tableToken ? tableToken : ''}
+              restaurantId={restaurantIdParam}
+            />
+          </div>
         </Suspense>
       </div>
     </MenuPageClient>
@@ -152,10 +151,6 @@ async function RestaurantPreviewPage({ restaurantId }: { restaurantId: string })
             <Store className="h-6 w-6 text-primary" />
             <div className="flex-1">
               <h1 className="text-xl font-bold">{data.restaurant_name}</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                <span>{data.location_name}</span>
-              </div>
             </div>
           </div>
 

@@ -21,33 +21,28 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { toast } from 'sonner';
-import type { Location, Table } from '@/types';
+import type { Table } from '@/types';
 
 interface Restaurant {
   id: string;
   name: string;
 }
 
-interface LocationWithTables {
-  location: Location;
-  tables: Table[];
-}
-
 interface QRCodeGeneratorProps {
   restaurants: Restaurant[];
   initialRestaurantId: string;
-  initialLocationsWithTables: LocationWithTables[];
+  initialTables: Table[];
 }
 
 export function QRCodeGenerator({
   restaurants,
   initialRestaurantId,
-  initialLocationsWithTables,
+  initialTables,
 }: QRCodeGeneratorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedRestaurant, setSelectedRestaurant] = useState(initialRestaurantId);
-  const [locationsWithTables, setLocationsWithTables] = useState(initialLocationsWithTables);
+  const [tables, setTables] = useState(initialTables);
   const [generatedQRCodes, setGeneratedQRCodes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
@@ -58,20 +53,20 @@ export function QRCodeGenerator({
   }, [searchParams, initialRestaurantId]);
 
   useEffect(() => {
-    const loadLocationsAndTables = async () => {
-      if (selectedRestaurant === initialRestaurantId && initialLocationsWithTables.length > 0) {
-        setLocationsWithTables(initialLocationsWithTables);
+    const loadTables = async () => {
+      if (selectedRestaurant === initialRestaurantId && initialTables.length > 0) {
+        setTables(initialTables);
         return;
       }
 
       setIsLoadingTables(true);
       try {
         const response = await fetch(
-          `/api/qr-codes/locations?restaurant=${selectedRestaurant}`
+          `/api/qr-codes/tables?restaurant=${selectedRestaurant}`
         );
         if (!response.ok) throw new Error('Failed to load tables');
         const data = await response.json();
-        setLocationsWithTables(data.locationsWithTables || []);
+        setTables(data.tables || []);
         setGeneratedQRCodes({});
       } catch (error) {
         console.error('Error loading tables:', error);
@@ -81,8 +76,8 @@ export function QRCodeGenerator({
       }
     };
 
-    loadLocationsAndTables();
-  }, [selectedRestaurant, initialRestaurantId, initialLocationsWithTables]);
+    loadTables();
+  }, [selectedRestaurant, initialRestaurantId, initialTables]);
 
   const handleRestaurantChange = (restaurantId: string) => {
     setSelectedRestaurant(restaurantId);
@@ -99,9 +94,8 @@ export function QRCodeGenerator({
     try {
       const url = getQRUrl(qrToken);
       const qrDataUrl = await QRCode.toDataURL(url, {
-        errorCorrectionLevel: 'H',
-        type: 'image/png',
-        quality: 0.95,
+        errorCorrectionLevel: 'H' as any,
+        type: 'image/png' as any,
         margin: 2,
         width: 300,
       });
@@ -120,18 +114,15 @@ export function QRCodeGenerator({
     setLoading(true);
     try {
       const allCodes: Record<string, string> = {};
-      for (const locationData of locationsWithTables) {
-        for (const table of locationData.tables) {
-          const url = getQRUrl(table.qr_token);
-          const qrDataUrl = await QRCode.toDataURL(url, {
-            errorCorrectionLevel: 'H',
-            type: 'image/png',
-            quality: 0.95,
-            margin: 2,
-            width: 300,
-          });
-          allCodes[table.id] = qrDataUrl;
-        }
+      for (const table of tables) {
+        const url = getQRUrl(table.qr_token);
+        const qrDataUrl = await QRCode.toDataURL(url, {
+          errorCorrectionLevel: 'H' as any,
+          type: 'image/png' as any,
+          margin: 2,
+          width: 300,
+        });
+        allCodes[table.id] = qrDataUrl;
       }
       setGeneratedQRCodes(allCodes);
       toast.success('All QR codes generated');
@@ -159,9 +150,8 @@ export function QRCodeGenerator({
     try {
       const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/restaurant/${selectedRestaurant}`;
       const qrDataUrl = await QRCode.toDataURL(url, {
-        errorCorrectionLevel: 'H',
-        type: 'image/png',
-        quality: 0.95,
+        errorCorrectionLevel: 'H' as any,
+        type: 'image/png' as any,
         margin: 2,
         width: 300,
       });
@@ -308,7 +298,7 @@ export function QRCodeGenerator({
             <CardHeader>
               <CardTitle className="text-lg">Table QR Codes</CardTitle>
               <CardDescription className="text-xs">
-                {locationsWithTables.reduce((sum, loc) => sum + loc.tables.length, 0)} tables
+                {tables.length} tables
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -340,9 +330,9 @@ export function QRCodeGenerator({
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-2xl font-bold">
-                    {locationsWithTables.length}
+                    {tables.length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Locations</p>
+                  <p className="text-xs text-muted-foreground">Total Tables</p>
                 </div>
               </CardContent>
             </Card>
@@ -350,9 +340,9 @@ export function QRCodeGenerator({
         </div>
       </div>
 
-      {/* Locations and tables - Full width */}
+      {/* Tables - Full width */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Tables by Location</h3>
+        <h3 className="text-lg font-semibold">Tables</h3>
         
         {isLoadingTables ? (
           <Card>
@@ -361,70 +351,61 @@ export function QRCodeGenerator({
               <span className="ml-2 text-muted-foreground">Loading tables...</span>
             </CardContent>
           </Card>
-        ) : locationsWithTables.length === 0 ? (
+        ) : tables.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">No tables found for this restaurant</p>
             </CardContent>
           </Card>
         ) : (
-          locationsWithTables.map((locationData) => (
-            <Card key={locationData.location.id}>
-              <CardHeader>
-                <CardTitle>{locationData.location.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                  {locationData.tables.map((table) => (
-                    <Card key={table.id} className="border">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">T {table.label}</CardTitle>
-                          {!table.active && <Badge variant="secondary" className="text-xs">Off</Badge>}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {generatedQRCodes[table.id] ? (
-                          <div className="flex justify-center p-1 bg-gray-50 rounded">
-                            <img
-                              src={generatedQRCodes[table.id]}
-                              alt={`QR code for table ${table.label}`}
-                              className="w-32 h-32"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex justify-center p-1 bg-gray-50 rounded h-32 items-center">
-                            <p className="text-xs text-muted-foreground text-center">Not generated</p>
-                          </div>
-                        )}
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {tables.map((table) => (
+              <Card key={table.id} className="border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">T {table.label}</CardTitle>
+                    {!table.active && <Badge variant="secondary" className="text-xs">Off</Badge>}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {generatedQRCodes[table.id] ? (
+                    <div className="flex justify-center p-1 bg-gray-50 rounded">
+                      <img
+                        src={generatedQRCodes[table.id]}
+                        alt={`QR code for table ${table.label}`}
+                        className="w-32 h-32"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex justify-center p-1 bg-gray-50 rounded h-32 items-center">
+                      <p className="text-xs text-muted-foreground text-center">Not generated</p>
+                    </div>
+                  )}
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => generateQRCode(table.id, table.qr_token)}
-                          className="w-full text-xs h-8"
-                        >
-                          Generate
-                        </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateQRCode(table.id, table.qr_token)}
+                    className="w-full text-xs h-8"
+                  >
+                    Generate
+                  </Button>
 
-                        {generatedQRCodes[table.id] && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadQRCode(table.id, table.label)}
-                            className="w-full text-xs h-8"
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Download
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  {generatedQRCodes[table.id] && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadQRCode(table.id, table.label)}
+                      className="w-full text-xs h-8"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Download
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </div>

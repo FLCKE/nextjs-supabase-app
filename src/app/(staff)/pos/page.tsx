@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getLocations, getTables } from '@/lib/actions/restaurant-management';
+import { getTables } from '@/lib/actions/restaurant-management';
 import { getMenuItemsWithStock } from '@/lib/actions/inventory';
 import { getStaffRestaurant } from '@/lib/actions/staff-restaurant';
 import StaffPosClient from './pos-new-client';
-import type { Location, Table, MenuItemWithStock } from '@/types';
+import type { Table, MenuItemWithStock } from '@/types';
 
 export default async function StaffPosPage() {
   const supabase = await createClient();
@@ -26,14 +26,8 @@ export default async function StaffPosPage() {
   const restaurantName = restaurant.name;
   console.log('Staff Restaurant ID:', staffRestaurantId);
   try {
-    // Fetch locations and tables
-    const locations = await getLocations(staffRestaurantId);
-    const locationsWithTables: (Location & { tables: Table[] })[] = await Promise.all(
-      locations.map(async (location) => {
-        const tables = await getTables(location.id);
-        return { ...location, tables };
-      })
-    );
+    // Fetch tables for the restaurant
+    const tables = await getTables(staffRestaurantId);
 
     // Fetch menu items
     const menuItems: MenuItemWithStock[] = await getMenuItemsWithStock(staffRestaurantId);
@@ -42,7 +36,7 @@ export default async function StaffPosPage() {
       <StaffPosClient 
         restaurantId={staffRestaurantId} 
         restaurantName={restaurantName} 
-        initialLocationsWithTables={locationsWithTables} 
+        tables={tables}
         menuItems={menuItems}
       />
     );
