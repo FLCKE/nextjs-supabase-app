@@ -5,27 +5,27 @@
 import { CartItem } from './cart-store';
 
 /**
- * Format price in cents to currency string
+ * Format price to currency string (already in currency units)
  */
-export const formatPrice = (cents: number, currency: string = 'USD') => {
+export const formatPrice = (price: number, currency: string = 'USD') => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
-  }).format(cents / 100);
+  }).format(price);
 };
 
 /**
- * Format price in cents to decimal number
+ * Price is already in currency units
  */
-export const centsToDecimal = (cents: number): number => {
-  return cents / 100;
+export const centsToDecimal = (price: number): number => {
+  return price;
 };
 
 /**
- * Convert decimal price to cents
+ * Price is already in currency units
  */
-export const decimalToCents = (decimal: number): number => {
-  return Math.round(decimal * 100);
+export const decimalToCents = (price: number): number => {
+  return price;
 };
 
 /**

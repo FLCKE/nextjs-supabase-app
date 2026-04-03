@@ -75,11 +75,11 @@ export default function CheckoutPage() {
     }
   }, [items.length, orderId, router]);
 
-  const formatPrice = (cents: number) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(cents / 100);
+    }).format(price);
   };
 
   const handleIncrement = (itemId: string, currentQty: number) => {
@@ -253,7 +253,7 @@ export default function CheckoutPage() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded">
-              Debug: Name="{customerName}", Phone="{customerPhone}", Total={total}
+              Debug: Name="{customerName}", Phone="{customerPhone}", Total={formatPrice(total)}
             </div>
             <MonerooPaymentButton
               amount={orderTotal}

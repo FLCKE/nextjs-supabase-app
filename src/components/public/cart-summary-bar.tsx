@@ -23,11 +23,11 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
   const taxes = getTaxes();
   const total = getTotal();
 
-  const formatPrice = (cents: number) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
-    }).format(cents / 100);
+    }).format(price);
   };
 
   return (
@@ -113,14 +113,22 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
             <Button
               size="lg"
               onClick={() => {
-                const currentToken = useCartStore.getState().tableToken;
-                if (!currentToken) {
+                const { tableToken, restaurent } = useCartStore.getState();
+                
+                // Allow checkout if either tableToken (QR code) or restaurent ID (manual selection) exists
+                if (!tableToken && !restaurent) {
                   toast.error('No order context', {
                     description: 'Please scan a QR code or select a restaurant',
                   });
                   return;
                 }
-                const queryParam = `?table_token=${encodeURIComponent(currentToken)}`;
+                
+                // Build query params - prefer tableToken if available
+                let queryParam = '';
+                if (tableToken) {
+                  queryParam = `?table_token=${encodeURIComponent(tableToken)}`;
+                }
+                
                 router.push(`/public/checkout${queryParam}`);
               }}
               className="font-semibold"

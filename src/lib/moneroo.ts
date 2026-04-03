@@ -82,7 +82,7 @@ export async function initiateMonerooPayment(
     }
 
     const payload = {
-      amount: payment.amount,
+      amount: payment.amount,  // Already in currency units, send as-is to Moneroo
       currency: payment.currency,
       description: payment.description,
       customer: {
@@ -119,14 +119,32 @@ export async function initiateMonerooPayment(
     console.log('Moneroo API Response Body:', responseText);
 
     if (!response.ok) {
-      const error = JSON.parse(responseText);
-      return {
-        success: false,
-        error: error.message || 'Payment initiation failed',
-      };
+      // Try to parse as JSON, but handle HTML error responses
+      try {
+        const error = JSON.parse(responseText);
+        return {
+          success: false,
+          error: error.message || 'Payment initiation failed',
+        };
+      } catch (parseError) {
+        // If response is HTML or other non-JSON, return generic error with status code
+        return {
+          success: false,
+          error: `Payment initiation failed with status ${response.status}. Please try again.`,
+        };
+      }
     }
 
-    const data = JSON.parse(responseText);
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse Moneroo response as JSON:', parseError);
+      return {
+        success: false,
+        error: 'Invalid response from payment server',
+      };
+    }
     console.log('Moneroo Response Data:', JSON.stringify(data, null, 2));
     
     // Moneroo returns data nested under 'data' key
@@ -316,16 +334,36 @@ try{
     });
     const responseText = await response.text()
     if (!response.ok){
-     const error = JSON.parse(responseText);
-     console.log(error.message)
+      // Try to parse as JSON, but handle HTML error responses
+      try {
+        const error = JSON.parse(responseText);
+        return {
+          success: false,
+          message: error.message || 'Payment initiation failed',
+          error: error.message || 'Payment initiation failed',
+        };
+      } catch (parseError) {
+        // If response is HTML or other non-JSON, return generic error
+        return {
+          success: false,
+          message: `Payment initiation failed with status ${response.status}`,
+          error: `Error with status ${response.status}`,
+        };
+      }
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse Moneroo response as JSON:', parseError);
       return {
         success: false,
-        message:"Payment initiation failed",
-        error: error.message || 'Payment initiation failed',
+        message: 'Invalid response from payment server',
+        error: 'Invalid response format',
       };
     }
-  const data= JSON.parse(responseText)
-  console.log(data)
+    console.log(data)
   return {
     success:true,
     message:data?.message,

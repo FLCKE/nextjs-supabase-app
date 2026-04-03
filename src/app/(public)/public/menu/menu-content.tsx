@@ -22,15 +22,15 @@ export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentP
 
   // Set table token or restaurant ID on mount
   React.useEffect(() => {
-    // Prefer tableToken if available (QR code from table)
-    if (tableToken) {
-      setTableToken(tableToken);
-    } else if (restaurantId) {
-      // Fall back to restaurant ID for non-QR access
+    // Always set the tableToken (even if empty string) - this preserves the preference for QR-based ordering
+    setTableToken(tableToken || '');
+    
+    // Also set restaurant ID if provided (for non-QR access)
+    if (restaurantId) {
       setRestaurent(restaurantId);
       console.log("le restau id :"+ restaurantId)
     }
-  }, [tableToken, restaurantId, setTableToken,setRestaurent]);
+  }, [tableToken, restaurantId, setTableToken, setRestaurent]);
 
   // Filter items
   const filteredItems = React.useMemo(() => {
