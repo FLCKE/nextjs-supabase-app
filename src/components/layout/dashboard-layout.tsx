@@ -68,6 +68,9 @@ interface DashboardLayoutProps {
   
   // Notifications
   notificationCount?: number;
+
+  // Custom sidebar component
+  sidebar?: React.ComponentType<{ userRole?: string; onNavigate?: () => void }>;
 }
 
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
@@ -109,21 +112,24 @@ export function DashboardLayout({
   userRole = 'user',
   onSignOut,
   notificationCount = 0,
+  sidebar,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+
+  const SidebarComponent = sidebar || AppSidebar;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-64">
-        <AppSidebar userRole={userRole} />
+        <SidebarComponent userRole={userRole} />
       </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-64 p-0">
-          <AppSidebar
+          <SidebarComponent
             userRole={userRole}
             onNavigate={() => setSidebarOpen(false)}
           />

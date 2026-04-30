@@ -40,7 +40,6 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     if (!response.ok) throw new Error('Failed to fetch stats');
     return await response.json();
   } catch (error) {
-    console.error('Error fetching stats:', error);
     return {
       totalRevenue: '$0.00',
       ordersToday: 0,
@@ -79,8 +78,6 @@ export default function DashboardPage() {
         setLoading(true);
         const data = await fetchDashboardStats();
         setStats(data);
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
       } finally {
         setLoading(false);
       }

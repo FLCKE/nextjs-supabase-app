@@ -16,7 +16,7 @@ interface MenuContentProps {
 }
 
 export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentProps) {
-  const { setTableToken , setRestaurent} = useCartStore();
+  const { setTableToken, setRestaurant } = useCartStore();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
@@ -24,13 +24,12 @@ export function MenuContent({ menuData, tableToken, restaurantId }: MenuContentP
   React.useEffect(() => {
     // Always set the tableToken (even if empty string) - this preserves the preference for QR-based ordering
     setTableToken(tableToken || '');
-    
+
     // Also set restaurant ID if provided (for non-QR access)
     if (restaurantId) {
-      setRestaurent(restaurantId);
-      console.log("le restau id :"+ restaurantId)
+      setRestaurant(restaurantId);
     }
-  }, [tableToken, restaurantId, setTableToken, setRestaurent]);
+  }, [tableToken, restaurantId, setTableToken, setRestaurant]);
 
   // Filter items
   const filteredItems = React.useMemo(() => {

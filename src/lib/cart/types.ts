@@ -22,7 +22,7 @@ export interface CartItem {
 export interface CartState {
   items: CartItem[];
   tableToken: string | null;
-  restaurent: string | null;
+  restaurant: string | null;
   // Actions
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (itemId: string) => void;
@@ -30,7 +30,7 @@ export interface CartState {
   updateNotes: (itemId: string, notes: string) => void;
   clearCart: () => void;
   setTableToken: (token: string) => void;
-  setRestaurent:(id: string) =>void;
+  setRestaurant:(id: string) =>void;
   // Computed values
   getItemCount: () => number;
   getSubtotal: () => number;

@@ -50,25 +50,61 @@ export async function GET(request: NextRequest) {
       : '0.00';
 
     // Get active tables
-    const activeTables = new Set(orders.filter(o => o.status === 'PENDING' || o.status === 'PAYING').map(o => o.table_id)).size;
+    const activeTables = new Set(orders.filter(o => o.status === 'pending' || o.status === 'paying').map(o => o.table_id)).size;
     const totalTables = tables.length;
 
-    // Estimate percentage change (rough - compare count to average expected)
-    const percentageChange = ordersToday > 8 ? '+15.2%' : ordersToday > 4 ? '+5.3%' : '-2.3%';
+    // Calculate percentage change vs yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
 
-    // Top item (for now, N/A - would need order_items table join)
-    const topItem = ordersToday > 0 ? 'Pizza Margherita' : 'N/A';
+    const { data: yesterdayOrders } = await supabase
+      .from('orders')
+      .select('id')
+      .gte('created_at', yesterday.toISOString())
+      .lt('created_at', todayISO);
 
-    // Recent orders (last 5)
+    const yesterdayCount = yesterdayOrders?.length || 0;
+    const percentageChangeValue = yesterdayCount > 0
+      ? (((ordersToday - yesterdayCount) / yesterdayCount) * 100).toFixed(1)
+      : '0.0';
+    const percentageChange = `${percentageChangeValue.startsWith('-') ? '' : '+'}${percentageChangeValue}%`;
+
+    // Get top item from order_items
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select('menu_item_id, name, quantity')
+      .in('order_id', orders.map(o => o.id));
+
+    const itemCounts = new Map<string, { name: string; count: number }>();
+    orderItems?.forEach(item => {
+      const existing = itemCounts.get(item.menu_item_id);
+      if (existing) {
+        existing.count += item.quantity || 1;
+      } else {
+        itemCounts.set(item.menu_item_id, { name: item.name || 'Unknown', count: item.quantity || 1 });
+      }
+    });
+
+    let topItem = 'N/A';
+    if (itemCounts.size > 0) {
+      const topEntry = Array.from(itemCounts.entries()).reduce((a, b) => a[1].count > b[1].count ? a : b);
+      topItem = topEntry[1].name;
+    }
+
+    // Recent orders (last 5) - use actual order data
     const recentOrders = orders
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
-      .map((order, idx) => ({
-        id: `#${String(2400 - idx)}`,
-        table: `Table ${(idx % 8) + 1}`,
-        amount: `$${((order.total_gross_cts || 0) / 100).toFixed(2)}`,
-        time: new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      }));
+      .map((order) => {
+        const table = tables.find(t => t.id === order.table_id);
+        return ({
+          id: `#${order.order_number || order.id.slice(0, 8)}`,
+          table: table?.label || `Table ${order.table_id?.slice(0, 8) || 'N/A'}`,
+          amount: `$${((order.total_gross_cts || 0) / 100).toFixed(2)}`,
+          time: new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        });
+      });
 
     return NextResponse.json({
       totalRevenue: `$${totalRevenue}`,

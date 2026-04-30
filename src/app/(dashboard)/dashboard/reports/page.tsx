@@ -48,8 +48,6 @@ export default function ReportsPage() {
         const data = await response.json();
         setReportData(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch report data:', error);
     } finally {
       setLoading(false);
     }
@@ -219,8 +217,8 @@ export default function ReportsPage() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Data export failed:', error);
+    } catch {
+      // Export failed silently
     }
   };
 

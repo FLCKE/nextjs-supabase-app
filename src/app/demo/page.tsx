@@ -1,206 +1,179 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ChevronLeft, Play } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
+import { DemoSidebar } from '@/components/layout/demo-sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  BarChart3,
+  ShoppingCart,
+  FileText,
+  QrCode,
+  TrendingUp,
+  ChevronRight,
+  ArrowRight
+} from 'lucide-react';
 
-export default function Demo() {
-  const features = [
-    {
-      title: 'Dashboard Principal',
-      description: 'Vue d\'ensemble de votre activité avec statistiques en temps réel',
-      link: '/demo/dashboard',
-      icon: '📊'
-    },
-    {
-      title: 'Gestion des Commandes',
-      description: 'Recevez, validez et préparez les commandes facilement',
-      link: '/demo/orders',
-      icon: '🍽️'
-    },
-    {
-      title: 'Gestion des Menus',
-      description: 'Créez et modifiez vos menus en quelques clics',
-      link: '/demo/menus',
-      icon: '📋'
-    },
-    {
-      title: 'Analytics & Statistiques',
-      description: 'Analysez vos ventes et comportements clients',
-      link: '/demo/analytics',
-      icon: '📈'
-    },
-    {
-      title: 'QR Codes Tables',
-      description: 'Générez des QR codes pour vos tables',
-      link: '/demo/qr',
-      icon: '🔲'
-    },
-  ];
+const demoFeatures = [
+  {
+    title: 'Dashboard Principal',
+    description: 'Vue d\'ensemble de votre activité avec statistiques en temps réel',
+    link: '/demo/dashboard',
+    icon: BarChart3,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10'
+  },
+  {
+    title: 'Gestion des Commandes',
+    description: 'Recevez, validez et préparez les commandes facilement',
+    link: '/demo/orders',
+    icon: ShoppingCart,
+    color: 'text-green-500',
+    bgColor: 'bg-green-500/10'
+  },
+  {
+    title: 'Gestion des Menus',
+    description: 'Créez et modifiez vos menus en quelques clics',
+    link: '/demo/menus',
+    icon: FileText,
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/10'
+  },
+  {
+    title: 'Analytics & Statistiques',
+    description: 'Analysez vos ventes et comportements clients',
+    link: '/demo/analytics',
+    icon: TrendingUp,
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/10'
+  },
+  {
+    title: 'QR Codes Tables',
+    description: 'Générez des QR codes pour vos tables',
+    link: '/demo/qr',
+    icon: QrCode,
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-500/10'
+  },
+];
+
+export default function DemoPage() {
+  const router = useRouter();
 
   return (
-    <div className="bg-white text-gray-800 font-sans">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="text-2xl font-bold text-orange-600">
-              RestoPay
-            </Link>
-            <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-orange-600">
-              <ChevronLeft className="w-5 h-5" />
-              Retour
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="py-16 bg-gradient-to-br from-orange-50 to-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-5xl font-bold mb-4">Découvrez RestoPay</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Explorez les fonctionnalités principales de notre plateforme
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Demo Grid */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Link
-                href={feature.link}
-                key={index}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -10 }}
-                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer h-full"
-                >
-                  <div className="relative h-48 bg-gradient-to-br from-orange-200 to-red-200 flex items-center justify-center group">
-                    <span className="text-6xl">{feature.icon}</span>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                    <p className="text-gray-600 mb-4">{feature.description}</p>
-                    <div className="text-orange-600 font-semibold flex items-center gap-2">
-                      Découvrir →
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Live Demo Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl p-12 text-center"
-          >
-            <h2 className="text-4xl font-bold mb-4">Prêt à Essayer?</h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Créez un compte gratuit et explorez toutes les fonctionnalités sans engagement
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/sign-up"
-                className="bg-white text-orange-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition"
-              >
-                Créer un Compte Gratuit
-              </Link>
-              <a
-                href="mailto:contact@restopay.com"
-                className="border-2 border-white text-white font-bold py-3 px-8 rounded-lg hover:bg-white hover:bg-opacity-10 transition"
-              >
-                Demander une Démo Personnalisée
-              </a>
+    <DashboardLayout
+      title="Démo RestoPay"
+      description="Explorez les fonctionnalités principales de notre plateforme"
+      breadcrumbs={[
+        { label: 'Accueil', href: '/' },
+        { label: 'Démo' }
+      ]}
+      sidebar={DemoSidebar}
+    >
+      {/* Hero Section */}
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Bienvenue dans la démo</CardTitle>
+            <CardDescription>
+              Découvrez toutes les fonctionnalités de RestoPay à travers cette démo interactive
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">Mode démo</Badge>
+              <Badge variant="outline">Sans inscription requise</Badge>
+              <Badge variant="outline">Accès complet</Badge>
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-center mb-12">Questions Fréquentes</h2>
-          <div className="max-w-3xl mx-auto space-y-6">
-            {[
-              {
-                q: 'Combien de temps faut-il pour configurer mon restaurant?',
-                a: 'Moins de 10 minutes! Créez votre compte, configurez votre profil et votre premier menu. Vous pouvez commencer à recevoir des commandes immédiatement.'
-              },
-              {
-                q: 'Puis-je gérer plusieurs restaurants?',
-                a: 'Oui! Les plans Pro et Enterprise vous permettent de gérer plusieurs restaurants depuis un seul compte.'
-              },
-              {
-                q: 'Comment fonctionnent les QR codes pour les tables?',
-                a: 'Générez des QR codes uniques pour chaque table. Les clients scannent pour accéder à votre menu et commander directement à leur table.'
-              },
-              {
-                q: 'Quels sont les moyens de paiement acceptés?',
-                a: 'Nous intégrons les principaux processeurs de paiement: Stripe, Square, PayPal et bien d\'autres.'
-              },
-              {
-                q: 'Y a-t-il une période d\'essai gratuite?',
-                a: 'Oui! Vous avez 14 jours gratuits pour essayer toutes les fonctionnalités sans carte bancaire requise.'
-              },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white p-6 rounded-lg shadow"
-              >
-                <h3 className="text-lg font-bold text-orange-600 mb-2">{item.q}</h3>
-                <p className="text-gray-600">{item.a}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="py-16 bg-orange-50 text-center">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">Vous Avez des Questions?</h2>
-          <p className="text-gray-600 mb-6 text-lg">
-            Notre équipe est disponible pour vous aider du lundi au vendredi de 9h à 18h
-          </p>
-          <a
-            href="mailto:support@restopay.com"
-            className="inline-block bg-orange-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-700 transition"
+      {/* Features Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {demoFeatures.map((feature, index) => (
+          <Card
+            key={index}
+            className="group hover:shadow-lg transition-all cursor-pointer"
           >
-            Nous Contacter
-          </a>
-        </div>
-      </section>
+            <CardHeader>
+              <div className={`w-12 h-12 rounded-lg ${feature.bgColor} flex items-center justify-center mb-4`}>
+                <feature.icon className={`w-6 h-6 ${feature.color}`} />
+              </div>
+              <CardTitle className="text-lg">{feature.title}</CardTitle>
+              <CardDescription>{feature.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={feature.link}>
+                <Button
+                  variant="outline"
+                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                >
+                  Explorer
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2025 RestoPay. Tous droits réservés.</p>
-        </div>
-      </footer>
-    </div>
+      {/* Quick Start Guide */}
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Guide de démarrage rapide</CardTitle>
+            <CardDescription>
+              4 étapes pour découvrir RestoPay
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              {[
+                { step: 1, title: 'Dashboard', desc: 'Vue d\'ensemble' },
+                { step: 2, title: 'Commandes', desc: 'Gestion temps réel' },
+                { step: 3, title: 'Menus', desc: 'Création & édition' },
+                { step: 4, title: 'Analytics', desc: 'Statistiques' },
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium flex-shrink-0">
+                    {item.step}
+                  </div>
+                  <div>
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* CTA Section */}
+      <div className="mt-8">
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
+          <CardHeader>
+            <CardTitle>Prêt à commencer ?</CardTitle>
+            <CardDescription>
+              Créez un compte gratuit et explorez toutes les fonctionnalités
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => router.push('/sign-up')}>
+                Créer un compte gratuit
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/')}>
+                Retour à l\'accueil
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 }

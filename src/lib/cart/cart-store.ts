@@ -16,8 +16,8 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   tableToken: string | null;
-  restaurent: string | null;
-  
+  restaurant: string | null;
+
   // Actions
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (itemId: string) => void;
@@ -25,7 +25,7 @@ interface CartStore {
   updateNotes: (itemId: string, notes: string) => void;
   clearCart: () => void;
   setTableToken: (token: string) => void;
-  setRestaurent:(id: string) =>void;
+  setRestaurant: (id: string) => void;
   // Computed values
   getItemCount: () => number;
   getSubtotal: () => number;
@@ -38,7 +38,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       tableToken: null,
-      restaurent: null,
+      restaurant: null,
 
       addItem: (item) => {
         const items = get().items;
@@ -93,8 +93,8 @@ export const useCartStore = create<CartStore>()(
       setTableToken: (token) => {
         set({ tableToken: token });
       },
-      setRestaurent: (id) => {
-        set({ restaurent: id });
+      setRestaurant: (id) => {
+        set({ restaurant: id });
       },
 
       getItemCount: () => {
@@ -122,6 +122,17 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'wego-cart-storage',
+      version: 1,
+      migrate: (persistedState: any) => {
+        // Migration v1: rename 'restaurent' to 'restaurant'
+        if (persistedState && 'restaurent' in persistedState) {
+          return {
+            ...persistedState,
+            restaurant: persistedState.restaurent,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

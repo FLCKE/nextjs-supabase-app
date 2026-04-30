@@ -1,0 +1,167 @@
+'use client';
+
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  Home,
+  Store,
+  UtensilsCrossed,
+  ShoppingCart,
+  BarChart3,
+  QrCode,
+  type LucideIcon,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+export interface NavItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: number | string;
+}
+
+export interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+interface DemoSidebarProps {
+  onNavigate?: () => void;
+}
+
+const navGroups: NavGroup[] = [
+  {
+    title: 'Main',
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/demo/dashboard',
+        icon: Home,
+      },
+      {
+        title: 'Commandes',
+        href: '/demo/orders',
+        icon: ShoppingCart,
+        badge: 'Live',
+      },
+      {
+        title: 'Menus',
+        href: '/demo/menus',
+        icon: UtensilsCrossed,
+      },
+    ],
+  },
+  {
+    title: 'Analytics',
+    items: [
+      {
+        title: 'QR Codes',
+        href: '/demo/qr',
+        icon: QrCode,
+      },
+      {
+        title: 'Statistiques',
+        href: '/demo/analytics',
+        icon: BarChart3,
+      },
+    ],
+  },
+];
+
+export function DemoSidebar({ onNavigate }: DemoSidebarProps) {
+  const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === '/demo') {
+      return pathname === href;
+    }
+    return pathname?.startsWith(href);
+  };
+
+  return (
+    <aside className="flex h-full flex-col border-r bg-card">
+      {/* Logo */}
+      <div className="flex h-16 items-center border-b px-6">
+        <Link
+          href="/demo"
+          className="flex items-center space-x-2"
+          onClick={onNavigate}
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Store className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm leading-tight">WEGO</span>
+            <span className="text-xs text-muted-foreground leading-tight">
+              RestoPay Démo
+            </span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4">
+        <nav className="space-y-6">
+          {navGroups.map((group) => {
+            const visibleItems = group.items;
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={group.title}>
+                <h3 className="mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.title}
+                </h3>
+                <div className="space-y-1">
+                  {visibleItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                          active
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1">{item.title}</span>
+                        {item.badge && (
+                          <Badge
+                            variant={active ? 'secondary' : 'outline'}
+                            className="ml-auto"
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </nav>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="border-t p-4">
+        <div className="rounded-lg bg-muted/50 p-3">
+          <Badge variant="secondary" className="mb-2">
+            Mode Démo
+          </Badge>
+          <p className="text-xs text-muted-foreground">
+            Version 1.0.0
+          </p>
+        </div>
+      </div>
+    </aside>
+  );
+}

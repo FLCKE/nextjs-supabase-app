@@ -233,9 +233,6 @@ export default function CheckoutPage() {
                   placeholder="Your name"
                   className="w-full px-3 py-2 border rounded-md text-sm mt-1"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Entered: "{customerName}" (length: {customerName.length})
-                </p>
               </div>
               <div>
                 <Label htmlFor="payment-phone" className="text-xs">Phone *</Label>
@@ -247,13 +244,7 @@ export default function CheckoutPage() {
                   placeholder="Your phone number"
                   className="w-full px-3 py-2 border rounded-md text-sm mt-1"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Entered: "{customerPhone}" (length: {customerPhone.length})
-                </p>
               </div>
-            </div>
-            <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded">
-              Debug: Name="{customerName}", Phone="{customerPhone}", Total={formatPrice(total)}
             </div>
             <MonerooPaymentButton
               amount={orderTotal}

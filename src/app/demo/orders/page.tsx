@@ -1,9 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, CheckCircle, AlertCircle, ChefHat, Printer } from 'lucide-react';
-import Link from 'next/link';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
+import { DemoSidebar } from '@/components/layout/demo-sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ChefHat, CheckCircle, Printer, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 
 const Orders = () => {
   const [orders, setOrders] = useState([
@@ -11,43 +15,43 @@ const Orders = () => {
       id: '#2405',
       table: '7',
       items: ['2x Pizza Margherita', '1x Pâtes Carbonara', '1x Salade César'],
-      montant: '€45.80',
-      statut: 'Reçue',
-      heure: '14:58',
-      priorite: 'haute',
+      amount: '€45.80',
+      status: 'Reçue',
+      time: '14:58',
+      priority: 'haute',
     },
     {
       id: '#2404',
       table: '5',
       items: ['3x Burgers', '2x Frites', '1x Milk-shake'],
-      montant: '€32.40',
-      statut: 'En préparation',
-      heure: '14:42',
-      priorite: 'normale',
+      amount: '€32.40',
+      status: 'En préparation',
+      time: '14:42',
+      priority: 'normale',
     },
     {
       id: '#2403',
       table: '2',
       items: ['1x Ratatouille', '1x Riz pilaf'],
-      montant: '€18.60',
-      statut: 'Prête à servir',
-      heure: '14:25',
-      priorite: 'basse',
+      amount: '€18.60',
+      status: 'Prête à servir',
+      time: '14:25',
+      priority: 'basse',
     },
     {
       id: '#2402',
       table: '4',
       items: ['2x Couscous', '1x Harira'],
-      montant: '€28.50',
-      statut: 'Servie',
-      heure: '14:10',
-      priorite: 'normale',
+      amount: '€28.50',
+      status: 'Servie',
+      time: '14:10',
+      priority: 'normale',
     },
   ]);
 
   const updateOrderStatus = (id: string, newStatus: string) => {
     setOrders(orders.map(order =>
-      order.id === id ? { ...order, statut: newStatus } : order
+      order.id === id ? { ...order, status: newStatus } : order
     ));
   };
 
@@ -66,8 +70,8 @@ const Orders = () => {
     }
   };
 
-  const getPriorityColor = (priorite: string) => {
-    switch (priorite) {
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
       case 'haute':
         return 'border-l-4 border-l-red-500 bg-red-50';
       case 'normale':
@@ -79,90 +83,60 @@ const Orders = () => {
     }
   };
 
+  const stats = [
+    { label: 'En attente', value: orders.filter(o => o.status === 'Reçue').length, color: 'text-red-600' },
+    { label: 'En cuisine', value: orders.filter(o => o.status === 'En préparation').length, color: 'text-yellow-600' },
+    { label: 'Prête', value: orders.filter(o => o.status === 'Prête à servir' || o.status === 'Servie').length, color: 'text-green-600' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/demo" className="p-2 hover:bg-gray-100 rounded-lg transition">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-2xl font-bold">Gestion des Commandes</h1>
-          </div>
-          <button className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition flex items-center gap-2">
-            <Printer className="w-4 h-4" />
-            Imprimer
-          </button>
-        </div>
-      </header>
+    <DashboardLayout
+      title="Gestion des Commandes"
+      description="Recevez, validez et préparez les commandes facilement"
+      breadcrumbs={[
+        { label: 'Démo', href: '/demo' },
+        { label: 'Commandes' }
+      ]}
+      sidebar={DemoSidebar}
+    >
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+        {stats.map((stat, idx) => (
+          <Card key={idx}>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0 }}
-            className="bg-white rounded-lg p-4 shadow-sm"
-          >
-            <p className="text-sm text-gray-600">En attente</p>
-            <p className="text-3xl font-bold text-red-600">1</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-lg p-4 shadow-sm"
-          >
-            <p className="text-sm text-gray-600">En cuisine</p>
-            <p className="text-3xl font-bold text-yellow-600">1</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-lg p-4 shadow-sm"
-          >
-            <p className="text-sm text-gray-600">Prête</p>
-            <p className="text-3xl font-bold text-green-600">1</p>
-          </motion.div>
-        </div>
-
-        {/* Orders List */}
-        <div className="space-y-4">
-          {orders.map((order, idx) => (
-            <motion.div
-              key={order.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`bg-white rounded-lg p-6 shadow-sm ${getPriorityColor(order.priorite)}`}
-            >
+      {/* Orders List */}
+      <div className="space-y-4">
+        {orders.map((order, idx) => (
+          <Card key={order.id} className={`${getPriorityColor(order.priority)}`}>
+            <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-bold">{order.id}</h3>
-                    <span className="text-sm font-semibold px-3 py-1 bg-orange-100 text-orange-700 rounded-full">
-                      Table {order.table}
-                    </span>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(order.statut)}`}>
-                      {order.statut}
+                    <Badge variant="secondary">Table {order.table}</Badge>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                      {order.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500">Reçue à {order.heure}</p>
+                  <p className="text-sm text-muted-foreground">Reçue à {order.time}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-green-600">{order.montant}</p>
+                  <p className="text-2xl font-bold text-green-600">{order.amount}</p>
                 </div>
               </div>
 
               {/* Items */}
-              <div className="bg-white bg-opacity-50 rounded p-4 mb-4">
+              <div className="bg-muted/50 rounded p-4 mb-4">
                 <ul className="space-y-2">
                   {order.items.map((item, i) => (
-                    <li key={i} className="text-sm text-gray-700 flex items-center gap-2">
+                    <li key={i} className="text-sm flex items-center gap-2">
                       <span className="text-orange-600">•</span>
                       {item}
                     </li>
@@ -172,59 +146,61 @@ const Orders = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-2 flex-wrap">
-                {order.statut === 'Reçue' && (
-                  <button
+                {order.status === 'Reçue' && (
+                  <Button
+                    size="sm"
                     onClick={() => updateOrderStatus(order.id, 'En préparation')}
-                    className="flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition text-sm font-medium"
+                    className="bg-yellow-600 hover:bg-yellow-700"
                   >
-                    <ChefHat className="w-4 h-4" />
+                    <ChefHat className="w-4 h-4 mr-2" />
                     Commencer la préparation
-                  </button>
+                  </Button>
                 )}
-                {order.statut === 'En préparation' && (
-                  <button
+                {order.status === 'En préparation' && (
+                  <Button
+                    size="sm"
                     onClick={() => updateOrderStatus(order.id, 'Prête à servir')}
-                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Marquer comme prête
-                  </button>
+                  </Button>
                 )}
-                {order.statut === 'Prête à servir' && (
-                  <button
+                {order.status === 'Prête à servir' && (
+                  <Button
+                    size="sm"
                     onClick={() => updateOrderStatus(order.id, 'Servie')}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Confirmer la livraison
-                  </button>
+                  </Button>
                 )}
-                <button className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
-                  <Printer className="w-4 h-4" />
+                <Button size="sm" variant="outline">
+                  <Printer className="w-4 h-4 mr-2" />
                   Imprimer ticket
-                </button>
+                </Button>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {/* Tip */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3"
-        >
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-green-900">Gestion efficace</p>
-            <p className="text-sm text-green-700 mt-1">
-              Cliquez sur les boutons d'action pour mettre à jour le statut des commandes en temps réel. Votre cuisine reçoit les notifications instantanément.
-            </p>
+      {/* Tip */}
+      <Card className="mt-6 bg-green-50 border-green-200">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-900">Gestion efficace</p>
+              <p className="text-sm text-green-700 mt-1">
+                Cliquez sur les boutons d'action pour mettre à jour le statut des commandes en temps réel. Votre cuisine reçoit les notifications instantanément.
+              </p>
+            </div>
           </div>
-        </motion.div>
-      </main>
-    </div>
+        </CardContent>
+      </Card>
+    </DashboardLayout>
   );
 };
 

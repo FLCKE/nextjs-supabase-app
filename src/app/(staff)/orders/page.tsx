@@ -50,9 +50,6 @@ export default  function StaffOrdersPage() {
     const checkAuth = async () => {
       const { data,error } = await supabase.auth.getUser();
       if (!data.user || error) {
-        if (error) {
-          console.error('Auth error:', error);
-        }
         router.push('/staff-login');
         return;
       }
@@ -69,7 +66,6 @@ export default  function StaffOrdersPage() {
       
       if (!user) return;
 
-      console.log('Staff Data 2:', user );
       // Get staff member's restaurant
       const { data:  staffData  } = await supabase
         .from('staff_members')
@@ -87,14 +83,11 @@ export default  function StaffOrdersPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching orders:', error);
         toast.error('Failed to load orders');
         return;
       }
-      console.log('Fetched Orders:', data);
       setOrders(data || []);
     } catch (error) {
-      console.error('Error in fetchOrders:', error);
       toast.error('Something went wrong');
     } finally {
       setLoading(false);
@@ -109,18 +102,13 @@ export default  function StaffOrdersPage() {
     // Set up real-time subscription
     const channel = supabase
       .channel('orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('Order change detected:', payload);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         fetchOrders(); // Refresh orders when changes detected
       })
       .subscribe();
 
-    // Refresh orders every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
-
     return () => {
       channel.unsubscribe();
-      clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
@@ -139,7 +127,6 @@ export default  function StaffOrdersPage() {
         .eq('id', orderId);
 
       if (error) {
-        console.log('Error updating order:', error);
         toast.error('Failed to update order status');
         return;
       }
@@ -152,7 +139,6 @@ export default  function StaffOrdersPage() {
       const order = orders.find(o => o.id === orderId);
       toast.success(`Order #${order?.order_number} marked as ${newStatus}`);
     } catch (error) {
-      console.error('Error in updateOrderStatus:', error);
       toast.error('Something went wrong');
     } finally {
       setUpdatingOrders(prev => {

@@ -113,10 +113,10 @@ export function CartSummaryBar({ currency }: CartSummaryBarProps) {
             <Button
               size="lg"
               onClick={() => {
-                const { tableToken, restaurent } = useCartStore.getState();
-                
-                // Allow checkout if either tableToken (QR code) or restaurent ID (manual selection) exists
-                if (!tableToken && !restaurent) {
+                const { tableToken, restaurant } = useCartStore.getState();
+
+                // Allow checkout if either tableToken (QR code) or restaurant ID (manual selection) exists
+                if (!tableToken && !restaurant) {
                   toast.error('No order context', {
                     description: 'Please scan a QR code or select a restaurant',
                   });

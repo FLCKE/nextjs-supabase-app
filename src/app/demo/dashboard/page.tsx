@@ -1,9 +1,23 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, Users, DollarSign, ShoppingCart, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
+import { DemoSidebar } from '@/components/layout/demo-sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, DollarSign, ShoppingCart, Users, AlertCircle } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 const Dashboard = () => {
   // Données de démonstration
@@ -25,72 +39,65 @@ const Dashboard = () => {
   ];
 
   const stats = [
-    { title: 'Chiffre d\'affaires', value: '€42,800', icon: DollarSign, color: 'bg-green-100 text-green-600' },
-    { title: 'Commandes', value: '250', icon: ShoppingCart, color: 'bg-blue-100 text-blue-600' },
-    { title: 'Clients', value: '1,245', icon: Users, color: 'bg-purple-100 text-purple-600' },
-    { title: 'Tendance', value: '+18%', icon: TrendingUp, color: 'bg-orange-100 text-orange-600' },
+    { title: 'Chiffre d\'affaires', value: '€42,800', icon: DollarSign, change: '+18%', color: 'text-green-500' },
+    { title: 'Commandes', value: '250', icon: ShoppingCart, change: '+12%', color: 'text-blue-500' },
+    { title: 'Clients', value: '1,245', icon: Users, change: '+8%', color: 'text-purple-500' },
+    { title: 'Panier Moyen', value: '€24.50', icon: TrendingUp, change: '+5%', color: 'text-orange-500' },
   ];
 
   const recentOrders = [
-    { id: '#2401', client: 'Table 5', montant: '€28.50', statut: 'En préparation', heure: '14:32' },
-    { id: '#2400', client: 'Table 3', montant: '€15.20', statut: 'Livrée', heure: '14:28' },
-    { id: '#2399', client: 'Table 1', montant: '€42.80', statut: 'Payée', heure: '14:15' },
-    { id: '#2398', client: 'Commande à emporter', montant: '€19.90', statut: 'Prête', heure: '14:02' },
+    { id: '#2401', table: 'Table 5', amount: '€28.50', status: 'En préparation', time: '14:32' },
+    { id: '#2400', table: 'Table 3', amount: '€15.20', status: 'Livrée', time: '14:28' },
+    { id: '#2399', table: 'Table 1', amount: '€42.80', status: 'Payée', time: '14:15' },
+    { id: '#2398', table: 'À emporter', amount: '€19.90', status: 'Prête', time: '14:02' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/demo" className="p-2 hover:bg-gray-100 rounded-lg transition">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-2xl font-bold">Dashboard Principal</h1>
-          </div>
-          <div className="text-sm text-gray-500">
-            Vue en temps réel • Semaine du 24-30 Mars
-          </div>
-        </div>
-      </header>
+    <DashboardLayout
+      title="Dashboard Principal"
+      description="Vue d'ensemble de votre activité avec statistiques en temps réel"
+      breadcrumbs={[
+        { label: 'Démo', href: '/demo' },
+        { label: 'Dashboard' }
+      ]}
+      sidebar={DemoSidebar}
+    >
+      {/* Demo Badge */}
+      <div className="mb-4">
+        <Badge variant="secondary">Mode démo • Semaine du 24-30 Mars</Badge>
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`${stat.color} rounded-xl p-6 shadow-sm`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium opacity-75">{stat.title}</p>
-                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                  </div>
-                  <Icon className="w-10 h-10 opacity-40" />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, idx) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={idx}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <Icon className={`h-4 w-4 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground flex items-center mt-1">
+                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                  {stat.change} depuis hier
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Line Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6"
-          >
-            <h2 className="text-lg font-bold mb-4">Ventes & Commandes</h2>
+      {/* Content Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+        {/* Line Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Ventes & Commandes</CardTitle>
+            <CardDescription>Évolution quotidienne des performances</CardDescription>
+          </CardHeader>
+          <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -102,88 +109,89 @@ const Dashboard = () => {
                 <Line type="monotone" dataKey="commandes" stroke="#4f46e5" name="Commandes" />
               </LineChart>
             </ResponsiveContainer>
-          </motion.div>
+          </CardContent>
+        </Card>
 
-          {/* Pie Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm p-6"
-          >
-            <h2 className="text-lg font-bold mb-4">Catégories</h2>
+        {/* Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Catégories</CardTitle>
+            <CardDescription>Répartition par catégorie</CardDescription>
+          </CardHeader>
+          <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={categoryData} cx="50%" cy="50%" labelLine={false} outerRadius={100} dataKey="value">
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  dataKey="value"
+                >
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-          </motion.div>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Recent Orders */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-xl shadow-sm p-6"
-        >
-          <h2 className="text-lg font-bold mb-4">Commandes Récentes</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">N° Commande</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Montant</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Statut</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Heure</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((order, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{order.id}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{order.client}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-green-600">{order.montant}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        order.statut === 'En préparation' ? 'bg-yellow-100 text-yellow-700' :
-                        order.statut === 'Livrée' ? 'bg-blue-100 text-blue-700' :
-                        order.statut === 'Payée' ? 'bg-green-100 text-green-700' :
-                        'bg-purple-100 text-purple-700'
-                      }`}>
-                        {order.statut}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{order.heure}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Recent Orders */}
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Commandes Récentes</CardTitle>
+          <CardDescription>
+            Vous avez {recentOrders.length} commandes actives en ce moment
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-8">
+            {recentOrders.map((order, idx) => (
+              <div key={idx} className="flex items-center">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {order.table} - Commande {order.id}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Montant: {order.amount}
+                  </p>
+                </div>
+                <div className="ml-auto flex items-center gap-4">
+                  <Badge
+                    variant={
+                      order.status === 'En préparation' ? 'secondary' :
+                      order.status === 'Livrée' ? 'default' :
+                      order.status === 'Payée' ? 'outline' : 'secondary'
+                    }
+                  >
+                    {order.status}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">{order.time}</span>
+                </div>
+              </div>
+            ))}
           </div>
-        </motion.div>
+        </CardContent>
+      </Card>
 
-        {/* Alert */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3"
-        >
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-blue-900">Conseil</p>
-            <p className="text-sm text-blue-700 mt-1">
-              Le samedi est votre meilleur jour de ventes! Assurez-vous d'avoir suffisamment de stock ce jour-là.
-            </p>
+      {/* Alert */}
+      <Card className="mt-4 bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-blue-900">Conseil</p>
+              <p className="text-sm text-blue-700 mt-1">
+                Le samedi est votre meilleur jour de ventes! Assurez-vous d'avoir suffisamment de stock ce jour-là.
+              </p>
+            </div>
           </div>
-        </motion.div>
-      </main>
-    </div>
+        </CardContent>
+      </Card>
+    </DashboardLayout>
   );
 };
 
