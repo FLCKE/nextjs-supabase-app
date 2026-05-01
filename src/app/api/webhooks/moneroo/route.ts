@@ -123,6 +123,34 @@ export async function POST(request: NextRequest) {
         console.warn(`[${requestId}] No payment found with transaction_id: ${webhookData.transactionId}`);
       } else {
         console.log(`[${requestId}] Payment updated successfully:`, paymentData[0]);
+
+        // Ensure commission and net_amount are stored on the payments row
+        try {
+          const paymentRow: any = paymentData[0];
+          if ((paymentRow.net_amount_cts === null || paymentRow.net_amount_cts === undefined) && typeof paymentRow.amount_cts === 'number') {
+            const computedNet = calculateNetAmount(paymentRow.amount_cts, 5);
+            const computedCommission = paymentRow.amount_cts - computedNet;
+
+            const { data: updatedPayment, error: updateErr } = await supabase
+              .from('payments')
+              .update({
+                net_amount_cts: computedNet,
+                commission_cts: computedCommission,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('transaction_id', webhookData.transactionId)
+              .select();
+
+            if (updateErr) {
+              console.error(`[${requestId}] Failed to update payment commission/net:`, updateErr);
+              await storeWebhookError(webhookData.transactionId, `Payment commission update failed: ${updateErr.message}`);
+            } else {
+              console.log(`[${requestId}] Payment commission/net updated:`, updatedPayment?.[0]);
+            }
+          }
+        } catch (err) {
+          console.error(`[${requestId}] Error ensuring commission on payment row:`, err);
+        }
       }
 
       // Update order status only if orderId provided
