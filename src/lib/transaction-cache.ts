@@ -1,4 +1,4 @@
-import { getRedisClient } from './redis';
+import { getRedisClient, isRedisAvailable } from './redis';
 
 interface PendingTransaction {
   transactionId: string;
@@ -14,6 +14,7 @@ const WEBHOOK_PROCESSED_PREFIX = 'moneroo:webhook:processed:';
 
 /**
  * Store a pending transaction in Redis
+ * Gracefully degrades if Redis is not available
  */
 export async function storePendingTransaction(
   transactionId: string,
@@ -21,6 +22,11 @@ export async function storePendingTransaction(
 ): Promise<void> {
   try {
     const redis = await getRedisClient();
+    if (!redis) {
+      console.warn('Redis not available, skipping transaction cache');
+      return;
+    }
+
     const transaction: PendingTransaction = {
       transactionId,
       orderId,
@@ -37,7 +43,7 @@ export async function storePendingTransaction(
     console.log(`Transaction stored in Redis: ${transactionId}`);
   } catch (error) {
     console.error('Error storing transaction in Redis:', error);
-    throw error;
+    // Don't throw - graceful degradation
   }
 }
 
@@ -49,8 +55,12 @@ export async function getPendingTransaction(
 ): Promise<PendingTransaction | undefined> {
   try {
     const redis = await getRedisClient();
+    if (!redis) {
+      return undefined;
+    }
+
     const data = await redis.get(`${TRANSACTION_PREFIX}${transactionId}`);
-    
+
     if (!data) {
       return undefined;
     }
@@ -71,6 +81,8 @@ export async function updateTransactionWithPaymentLink(
 ): Promise<void> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return;
+
     const key = `${TRANSACTION_PREFIX}${transactionId}`;
     const data = await redis.get(key);
 
@@ -84,7 +96,6 @@ export async function updateTransactionWithPaymentLink(
     }
   } catch (error) {
     console.error('Error updating transaction link in Redis:', error);
-    throw error;
   }
 }
 
@@ -97,6 +108,8 @@ export async function updateTransactionStatus(
 ): Promise<void> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return;
+
     const key = `${TRANSACTION_PREFIX}${transactionId}`;
     const data = await redis.get(key);
 
@@ -109,7 +122,6 @@ export async function updateTransactionStatus(
     }
   } catch (error) {
     console.error('Error updating transaction status in Redis:', error);
-    throw error;
   }
 }
 
@@ -121,6 +133,8 @@ export async function isWebhookProcessed(
 ): Promise<boolean> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return false;
+
     const key = `${WEBHOOK_PROCESSED_PREFIX}${transactionId}`;
     const exists = await redis.exists(key);
     return exists === 1;
@@ -138,13 +152,14 @@ export async function markWebhookAsProcessed(
 ): Promise<void> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return;
+
     const key = `${WEBHOOK_PROCESSED_PREFIX}${transactionId}`;
     // Keep webhook processed markers for 24 hours
     await redis.setEx(key, 86400, '1');
     console.log(`Webhook marked as processed: ${transactionId}`);
   } catch (error) {
     console.error('Error marking webhook as processed:', error);
-    throw error;
   }
 }
 
@@ -156,6 +171,8 @@ export async function getWebhookError(
 ): Promise<string | null> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return null;
+
     const key = `${WEBHOOK_PROCESSED_PREFIX}:error:${transactionId}`;
     return await redis.get(key);
   } catch (error) {
@@ -173,6 +190,8 @@ export async function storeWebhookError(
 ): Promise<void> {
   try {
     const redis = await getRedisClient();
+    if (!redis) return;
+
     const key = `${WEBHOOK_PROCESSED_PREFIX}:error:${transactionId}`;
     // Keep error logs for 24 hours
     await redis.setEx(key, 86400, error);

@@ -3,6 +3,7 @@ import {
   verifyMonerooWebhookSignature,
   processMonerooWebhook,
 } from '@/lib/moneroo';
+import { calculateNetAmount } from '@/lib/commission';
 import { 
   updateTransactionWithPaymentLink,
   updateTransactionStatus,
@@ -150,12 +151,46 @@ export async function POST(request: NextRequest) {
       // Payout webhook: Update payments_by_day table only
       console.log(`[${requestId}] Processing payout webhook for transaction: ${webhookData.transactionId}`);
       
+      // First, fetch the existing record to compute net_amount_cts if needed
+      const { data: existingRows, error: fetchError } = await supabase
+        .from('payments_by_day')
+        .select('id, amount_cts, net_amount_cts')
+        .eq('transaction_id', webhookData.transactionId)
+        .limit(1);
+
+      if (fetchError) {
+        console.error(`[${requestId}] Error fetching payout row:`, fetchError);
+        await storeWebhookError(webhookData.transactionId, `Payout fetch failed: ${fetchError.message}`);
+        return NextResponse.json({ error: 'Failed to fetch payout', details: fetchError.message }, { status: 500 });
+      }
+
+      if (!existingRows || existingRows.length === 0) {
+        console.warn(`[${requestId}] No payout found with transaction_id: ${webhookData.transactionId}`);
+      }
+
+      // Compute net_amount_cts if missing
+      let netAmountToSet: number | undefined = undefined;
+      if (existingRows && existingRows.length > 0) {
+        const row = existingRows[0] as any;
+        if ((row.net_amount_cts === null || row.net_amount_cts === undefined) && typeof row.amount_cts === 'number') {
+          try {
+            netAmountToSet = calculateNetAmount(row.amount_cts, 5);
+            console.log(`[${requestId}] Computed net_amount_cts=${netAmountToSet} from amount_cts=${row.amount_cts}`);
+          } catch (err) {
+            console.error(`[${requestId}] Failed to compute net amount:`, err);
+          }
+        }
+      }
+
+      const updatePayload: any = {
+        status: paymentStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (typeof netAmountToSet === 'number') updatePayload.net_amount_cts = netAmountToSet;
+
       const { data: payoutData, error: payoutError } = await supabase
         .from('payments_by_day')
-        .update({
-          status: paymentStatus,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('transaction_id', webhookData.transactionId)
         .select();
 
@@ -169,7 +204,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (!payoutData || payoutData.length === 0) {
-        console.warn(`[${requestId}] No payout found with transaction_id: ${webhookData.transactionId}`);
+        console.warn(`[${requestId}] No payout updated with transaction_id: ${webhookData.transactionId}`);
       } else {
         console.log(`[${requestId}] Payout updated successfully:`, payoutData[0]);
       }

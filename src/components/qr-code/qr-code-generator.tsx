@@ -87,7 +87,8 @@ export function QRCodeGenerator({
   };
 
   const getQRUrl = (qrToken: string) => {
-    return `${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${qrToken}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    return `${origin}/qr/${qrToken}`;
   };
 
   const generateQRCode = async (tableId: string, qrToken: string) => {

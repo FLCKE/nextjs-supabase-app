@@ -367,12 +367,29 @@ export async function createTableForLocation(locationId: string, label: string) 
 // Generate QR code URL for a table
 export async function generateTableQRCode(tableId: string, tableLabel: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const qrUrl = `${baseUrl}/public/menu?table=${tableId}`;
-    
+    const supabase = await createClient();
+
+    // Get the table's qr_token
+    const { data: table, error: tableError } = await supabase
+      .from('tables')
+      .select('qr_token')
+      .eq('id', tableId)
+      .single();
+
+    if (tableError || !table) {
+      return {
+        success: false,
+        error: 'Table not found',
+      };
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    // Use the same URL format as the QRCodeGenerator component
+    const qrUrl = `${baseUrl}/qr/${table.qr_token}`;
+
     // Using qrcode.org as a free QR code generator
     const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
-    
+
     return { success: true, qrUrl, qrCodeImageUrl, error: null };
   } catch (error) {
     console.error('Error generating QR code:', error);

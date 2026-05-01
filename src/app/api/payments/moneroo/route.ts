@@ -5,6 +5,7 @@ import {
 } from '@/lib/moneroo';
 import { storePendingTransaction } from '@/lib/transaction-cache';
 import { createClient } from '@/lib/supabase/server';
+import { calculateNetAmount } from '@/lib/commission';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,14 +60,29 @@ export async function POST(request: NextRequest) {
       console.log('Transaction stored as pending:', result.transactionId);
     }
 
-    // Save payment to database
+    // Save payment to database, compute commission and net amount (integers in cents)
     const supabase = await createClient();
+
+    const amountCts = body.amount;
+    let netAmountCts: number;
+    let commissionCts: number;
+    try {
+      netAmountCts = calculateNetAmount(amountCts, 5); // 5% commission default
+      commissionCts = amountCts - netAmountCts;
+    } catch (err) {
+      console.error('Commission calculation failed, falling back to zero commission', err);
+      netAmountCts = amountCts;
+      commissionCts = 0;
+    }
+
     const { error: dbError } = await supabase
       .from('payments')
       .insert({
         order_id: body.orderId,
         transaction_id: result.transactionId,
-        amount_cts: body.amount,
+        amount_cts: amountCts,
+        commission_cts: commissionCts,
+        net_amount_cts: netAmountCts,
         currency: body.currency,
         status: 'pending',
         payment_method: 'moneroo',
